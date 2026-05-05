@@ -1,53 +1,223 @@
 {
-  "STRONG_TREND_UP": {
-    "strategy": "A_VWAP",
-    "n_trades": 13,
-    "wr": 53.84615384615385,
-    "pnl": 33.08216658043253,
-    "pnl_per_trade": 2.544782044648656
+  "version": 2,
+  "vetos_enabled": [
+    "macro",
+    "blacklist",
+    "correlation",
+    "sentiment",
+    "funding",
+    "time_of_day"
+  ],
+  "dynamic_sizing": true,
+  "trail_sl_offset_atr": 0.2,
+  "global": {
+    "STRONG_TREND_UP": {
+      "strategy": "A_VWAP",
+      "n_trades": 51,
+      "wr": 39.21568627450981,
+      "pnl": 29.38887122406637,
+      "pnl_per_trade": 0.5762523769424779
+    },
+    "STRONG_TREND_DOWN": {
+      "strategy": "B_TrendPullback",
+      "n_trades": 74,
+      "wr": 43.24324324324324,
+      "pnl": -72.81475399589652,
+      "pnl_per_trade": -0.9839831621067098
+    },
+    "WEAK_TREND_UP": {
+      "strategy": "E_RangeBounce",
+      "n_trades": 13,
+      "wr": 38.46153846153847,
+      "pnl": 13.38899642695415,
+      "pnl_per_trade": 1.0299228020733961
+    },
+    "WEAK_TREND_DOWN": {
+      "strategy": "E_RangeBounce",
+      "n_trades": 21,
+      "wr": 38.095238095238095,
+      "pnl": -6.05139219251489,
+      "pnl_per_trade": -0.2881615329768995
+    },
+    "RANGING": {
+      "strategy": "A_VWAP",
+      "n_trades": 25,
+      "wr": 36.0,
+      "pnl": 7.270210022131666,
+      "pnl_per_trade": 0.29080840088526666
+    },
+    "SQUEEZE": {
+      "strategy": "A_VWAP",
+      "n_trades": 10,
+      "wr": 40.0,
+      "pnl": 10.062349801257898,
+      "pnl_per_trade": 1.00623498012579
+    },
+    "VOLATILE": {
+      "strategy": "B_TrendPullback",
+      "n_trades": 5,
+      "wr": 60.0,
+      "pnl": 5.768210045754092,
+      "pnl_per_trade": 1.1536420091508184
+    },
+    "UNKNOWN": null,
+    "MIXED": {
+      "strategy": "B_TrendPullback",
+      "n_trades": 41,
+      "wr": 51.21951219512195,
+      "pnl": 3.0330909689148555,
+      "pnl_per_trade": 0.07397782851011843
+    }
   },
-  "STRONG_TREND_DOWN": {
-    "strategy": "B_TrendPullback",
-    "n_trades": 12,
-    "wr": 33.33333333333333,
-    "pnl": -15.929287229912422,
-    "pnl_per_trade": -1.327440602492702
-  },
-  "WEAK_TREND_UP": {
-    "strategy": "A_VWAP",
-    "n_trades": 5,
-    "wr": 40.0,
-    "pnl": -0.7866229979709258,
-    "pnl_per_trade": -0.15732459959418515
-  },
-  "WEAK_TREND_DOWN": {
-    "strategy": "B_TrendPullback",
-    "n_trades": 15,
-    "wr": 53.333333333333336,
-    "pnl": 3.2900188404524187,
-    "pnl_per_trade": 0.21933458936349456
-  },
-  "RANGING": {
-    "strategy": "A_VWAP",
-    "n_trades": 9,
-    "wr": 55.55555555555556,
-    "pnl": 24.132464178043932,
-    "pnl_per_trade": 2.681384908671548
-  },
-  "SQUEEZE": {
-    "strategy": "B_TrendPullback",
-    "n_trades": 11,
-    "wr": 45.45454545454545,
-    "pnl": 5.887125831408283,
-    "pnl_per_trade": 0.535193257400753
-  },
-  "VOLATILE": null,
-  "UNKNOWN": null,
-  "MIXED": {
-    "strategy": "A_VWAP",
-    "n_trades": 29,
-    "wr": 44.827586206896555,
-    "pnl": 18.22203308328677,
-    "pnl_per_trade": 0.628345968389199
+  "per_asset": {
+    "BTCUSDT": {
+      "STRONG_TREND_DOWN": {
+        "strategy": "D_MACDMomentum",
+        "n_trades": 19,
+        "wr": 52.63157894736842,
+        "pnl": 0.3985027131772352,
+        "pnl_per_trade": 0.020973827009328167
+      }
+    },
+    "ETHUSDT": {
+      "STRONG_TREND_UP": {
+        "strategy": "D_MACDMomentum",
+        "n_trades": 24,
+        "wr": 45.83333333333333,
+        "pnl": 28.721241907399016,
+        "pnl_per_trade": 1.1967184128082924
+      }
+    },
+    "MSTRUSDT": {
+      "STRONG_TREND_DOWN": {
+        "strategy": "E_RangeBounce",
+        "n_trades": 23,
+        "wr": 21.73913043478261,
+        "pnl": 10.95843874511686,
+        "pnl_per_trade": 0.4764538584833417
+      },
+      "WEAK_TREND_UP": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 12,
+        "wr": 66.66666666666666,
+        "pnl": 7.6356232906334975,
+        "pnl_per_trade": 0.6363019408861248
+      },
+      "RANGING": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 27,
+        "wr": 40.74074074074074,
+        "pnl": 3.742199256262965,
+        "pnl_per_trade": 0.13859997245418387
+      }
+    },
+    "AVAXUSDT": {
+      "STRONG_TREND_UP": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 12,
+        "wr": 66.66666666666666,
+        "pnl": 13.867051095938969,
+        "pnl_per_trade": 1.1555875913282474
+      },
+      "STRONG_TREND_DOWN": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 10,
+        "wr": 60.0,
+        "pnl": 2.3242326222888403,
+        "pnl_per_trade": 0.23242326222888404
+      },
+      "SQUEEZE": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 10,
+        "wr": 80.0,
+        "pnl": 25.895448094587536,
+        "pnl_per_trade": 2.5895448094587534
+      },
+      "MIXED": {
+        "strategy": "A_VWAP",
+        "n_trades": 11,
+        "wr": 54.54545454545454,
+        "pnl": 8.64289378739706,
+        "pnl_per_trade": 0.7857176170360964
+      }
+    },
+    "INJUSDT": {
+      "STRONG_TREND_UP": {
+        "strategy": "D_MACDMomentum",
+        "n_trades": 15,
+        "wr": 60.0,
+        "pnl": 1.538235924017922,
+        "pnl_per_trade": 0.1025490616011948
+      },
+      "WEAK_TREND_DOWN": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 12,
+        "wr": 58.333333333333336,
+        "pnl": 17.729977589703246,
+        "pnl_per_trade": 1.4774981324752705
+      },
+      "RANGING": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 36,
+        "wr": 52.77777777777778,
+        "pnl": 38.170926184449094,
+        "pnl_per_trade": 1.0603035051235858
+      },
+      "MIXED": {
+        "strategy": "A_VWAP",
+        "n_trades": 16,
+        "wr": 31.25,
+        "pnl": 0.17852192878400075,
+        "pnl_per_trade": 0.011157620549000047
+      }
+    },
+    "DOGEUSDT": {
+      "WEAK_TREND_UP": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 10,
+        "wr": 50.0,
+        "pnl": 3.435732813112936,
+        "pnl_per_trade": 0.3435732813112936
+      }
+    },
+    "WIFUSDT": {
+      "STRONG_TREND_DOWN": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 13,
+        "wr": 53.84615384615385,
+        "pnl": 15.427405306713107,
+        "pnl_per_trade": 1.1867234851317774
+      },
+      "WEAK_TREND_DOWN": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 11,
+        "wr": 45.45454545454545,
+        "pnl": 1.841719132442102,
+        "pnl_per_trade": 0.1674290120401911
+      },
+      "MIXED": {
+        "strategy": "E_RangeBounce",
+        "n_trades": 33,
+        "wr": 27.27272727272727,
+        "pnl": 60.56611869765144,
+        "pnl_per_trade": 1.8353369302318618
+      }
+    },
+    "XLMUSDT": {
+      "WEAK_TREND_DOWN": {
+        "strategy": "B_TrendPullback",
+        "n_trades": 11,
+        "wr": 54.54545454545454,
+        "pnl": 4.395424431342963,
+        "pnl_per_trade": 0.3995840392129967
+      },
+      "MIXED": {
+        "strategy": "E_RangeBounce",
+        "n_trades": 22,
+        "wr": 50.0,
+        "pnl": 52.95581925611396,
+        "pnl_per_trade": 2.4070826934597256
+      }
+    }
   }
 }

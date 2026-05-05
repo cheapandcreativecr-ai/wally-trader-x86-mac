@@ -134,23 +134,28 @@ def calc_ema(values, period):
 
 
 def calc_macd(closes, fast=12, slow=26, signal=9):
+    """O(n) incremental MACD — avoids the O(n^2) rebuild-from-scratch bug."""
     if len(closes) < slow + signal:
         return None, None
-    ema_fast = calc_ema(closes, fast)
-    ema_slow = calc_ema(closes, slow)
-    if ema_fast is None or ema_slow is None:
-        return None, None
-    macd_line = ema_fast - ema_slow
-    # Compute signal as EMA of macd over recent bars
+    # Seed EMA_fast and EMA_slow from the first `slow` bars
+    mult_f = 2 / (fast + 1)
+    mult_s = 2 / (slow + 1)
+    mult_sig = 2 / (signal + 1)
+    ef = sum(closes[:fast]) / fast
+    es = sum(closes[:slow]) / slow
+    # Walk forward from bar `slow` onward, accumulating MACD values
     macd_history = []
-    for i in range(slow, len(closes) + 1):
-        ef = calc_ema(closes[:i], fast)
-        es = calc_ema(closes[:i], slow)
-        if ef and es:
-            macd_history.append(ef - es)
+    for v in closes[slow:]:
+        ef = (v - ef) * mult_f + ef
+        es = (v - es) * mult_s + es
+        macd_history.append(ef - es)
+    macd_line = macd_history[-1] if macd_history else 0
     if len(macd_history) < signal:
         return macd_line, None
-    sig = calc_ema(macd_history, signal)
+    # Compute signal EMA over macd_history
+    sig = sum(macd_history[:signal]) / signal
+    for m in macd_history[signal:]:
+        sig = (m - sig) * mult_sig + sig
     return macd_line, sig
 
 
