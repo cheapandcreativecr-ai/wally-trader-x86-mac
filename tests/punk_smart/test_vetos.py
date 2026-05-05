@@ -131,3 +131,59 @@ class TestTimeOfDayVeto:
         result = vetos.veto_time_of_day({"side": "LONG"}, regime_pnl_per_trade=0.5,
                                           now=cr_time(2026, 5, 5, 3, 0))
         assert result.passed is False
+
+
+class TestEvaluate:
+    def test_runs_all_enabled_vetos(self, tmp_profile_dir, cr_time, monkeypatch,
+                                     signals_csv_factory):
+        signals_csv_factory([])
+        monkeypatch.setattr(vetos, "_macro_check",
+                            lambda: {"blocked": False, "reason": None})
+        monkeypatch.setattr(vetos, "_fng_now", lambda: 50)
+        monkeypatch.setattr(vetos, "_funding_now", lambda asset: 0.0001)
+        ctx = {
+            "now": cr_time(2026, 5, 5, 10, 0),
+            "memory_dir": tmp_profile_dir,
+            "regime_pnl_per_trade": 2.5,
+            "enabled": ["macro", "blacklist", "correlation", "sentiment",
+                         "funding", "time_of_day"],
+        }
+        results = vetos.evaluate({"asset": "BTCUSDT", "side": "LONG"}, ctx)
+        assert len(results) == 6
+        assert all(r.passed for r in results)
+
+    def test_skips_disabled_vetos(self, tmp_profile_dir, cr_time, monkeypatch,
+                                   signals_csv_factory):
+        signals_csv_factory([])
+        monkeypatch.setattr(vetos, "_macro_check",
+                            lambda: {"blocked": True, "reason": "FOMC"})
+        ctx = {
+            "now": cr_time(2026, 5, 5, 10, 0),
+            "memory_dir": tmp_profile_dir,
+            "regime_pnl_per_trade": 2.5,
+            "enabled": ["blacklist", "correlation"],  # macro NOT in list
+        }
+        results = vetos.evaluate({"asset": "BTCUSDT", "side": "LONG"}, ctx)
+        assert all(r.name in ("blacklist", "correlation") for r in results)
+        assert all(r.passed for r in results)
+
+    def test_first_failed_veto_is_blocking(self, tmp_profile_dir, cr_time,
+                                            monkeypatch, signals_csv_factory):
+        signals_csv_factory([
+            {"symbol": "BTCUSDT.P", "side": "LONG", "exit_price": ""},
+        ])
+        monkeypatch.setattr(vetos, "_macro_check",
+                            lambda: {"blocked": False, "reason": None})
+        monkeypatch.setattr(vetos, "_fng_now", lambda: 50)
+        monkeypatch.setattr(vetos, "_funding_now", lambda asset: 0.0001)
+        ctx = {
+            "now": cr_time(2026, 5, 5, 10, 0),
+            "memory_dir": tmp_profile_dir,
+            "regime_pnl_per_trade": 2.5,
+            "enabled": ["macro", "correlation"],
+        }
+        results = vetos.evaluate({"asset": "ETHUSDT", "side": "LONG"}, ctx)
+        # correlation should fail (BTC LONG already in btc_majors)
+        failing = [r for r in results if not r.passed]
+        assert len(failing) == 1
+        assert failing[0].name == "correlation"

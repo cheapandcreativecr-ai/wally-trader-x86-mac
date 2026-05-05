@@ -167,3 +167,31 @@ def veto_time_of_day(setup: dict, regime_pnl_per_trade: float, now) -> VetoResul
     return VetoResult("time_of_day", False,
                       f"CR {cr_hour:02d}:xx asian/weak window + low-quality regime",
                       source="local clock")
+
+
+def evaluate(setup: dict, ctx: dict) -> list[VetoResult]:
+    """Run enabled vetos in fixed order. Returns one VetoResult per veto."""
+    enabled = ctx.get("enabled", ["macro", "blacklist", "correlation",
+                                    "sentiment", "funding", "time_of_day"])
+    results: list[VetoResult] = []
+    if "macro" in enabled:
+        results.append(veto_macro(setup))
+    if "blacklist" in enabled:
+        results.append(veto_blacklist(setup, now=ctx["now"],
+                                        memory_dir=ctx.get("memory_dir")))
+    if "correlation" in enabled:
+        results.append(veto_correlation(setup, memory_dir=ctx.get("memory_dir")))
+    if "sentiment" in enabled:
+        results.append(veto_sentiment(setup))
+    if "funding" in enabled:
+        results.append(veto_funding(setup))
+    if "time_of_day" in enabled:
+        results.append(veto_time_of_day(
+            setup,
+            regime_pnl_per_trade=ctx.get("regime_pnl_per_trade", 0.0),
+            now=ctx["now"]))
+    return results
+
+
+def is_approved(results: list[VetoResult]) -> bool:
+    return all(r.passed for r in results)
