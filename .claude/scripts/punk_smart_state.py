@@ -17,7 +17,6 @@ Public API:
 
 from __future__ import annotations
 
-import csv
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -62,11 +61,19 @@ def _streaks_path(memory_dir: Path | None) -> Path:
 
 def record_sl(asset: str, ts: datetime, pnl_usd: float,
               memory_dir: Path | None = None) -> None:
+    """Record an SL on `asset`. After 2 SLs, asset is blacklisted until next CR 00:00.
+
+    Behavior on 3rd+ SL: the blacklist_until is updated to the new SL's next
+    CR midnight (effectively keeping the asset blacklisted as long as SLs continue).
+
+    The `pnl_usd` argument is accepted for API symmetry but is persisted to
+    sl_window.json (kill-switch tracker), which is wired up in a follow-up task.
+    """
     p = _streaks_path(memory_dir)
     data = _load(p, {"version": 1, "as_of_cr_date": None, "assets": {}})
     cell = data["assets"].get(asset, {"sl_count": 0, "last_sl_ts": None,
                                        "blacklist_until": None})
-    cell["sl_count"] = cell.get("sl_count", 0) + 1
+    cell["sl_count"] = cell["sl_count"] + 1
     cell["last_sl_ts"] = ts.isoformat()
     if cell["sl_count"] >= 2:
         cell["blacklist_until"] = _next_cr_midnight(ts).isoformat()
