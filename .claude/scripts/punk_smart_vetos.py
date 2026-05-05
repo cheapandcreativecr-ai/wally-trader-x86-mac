@@ -152,3 +152,18 @@ def veto_correlation(setup: dict, memory_dir=None) -> VetoResult:
                 source="signals_received.csv")
     return VetoResult("correlation", True, "no conflict",
                       source="signals_received.csv")
+
+
+def veto_time_of_day(setup: dict, regime_pnl_per_trade: float, now) -> VetoResult:
+    cr_hour = now.astimezone(state.CR_OFFSET).hour
+    in_weak = cr_hour >= 22 or cr_hour < 5
+    if not in_weak:
+        return VetoResult("time_of_day", True, f"CR {cr_hour:02d}:xx active window",
+                          source="local clock")
+    if regime_pnl_per_trade >= 2.0:
+        return VetoResult("time_of_day", True,
+                          f"CR {cr_hour:02d}:xx weak window — override (regime $/trade ≥2)",
+                          source="local clock")
+    return VetoResult("time_of_day", False,
+                      f"CR {cr_hour:02d}:xx asian/weak window + low-quality regime",
+                      source="local clock")

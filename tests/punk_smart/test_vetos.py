@@ -107,3 +107,27 @@ class TestFundingVeto:
     def test_blocks_short_when_funding_extreme_negative(self, monkeypatch):
         monkeypatch.setattr(vetos, "_funding_now", lambda asset: -0.0006)
         assert not vetos.veto_funding({"asset": "BTCUSDT", "side": "SHORT"}).passed
+
+
+class TestTimeOfDayVeto:
+    def test_clear_during_active_window(self, cr_time):
+        result = vetos.veto_time_of_day({"side": "LONG"}, regime_pnl_per_trade=2.5,
+                                          now=cr_time(2026, 5, 5, 10, 0))
+        assert result.passed is True
+
+    def test_blocks_during_weak_window_low_quality_regime(self, cr_time):
+        result = vetos.veto_time_of_day({"side": "LONG"}, regime_pnl_per_trade=0.5,
+                                          now=cr_time(2026, 5, 5, 23, 0))
+        assert result.passed is False
+        assert "weak window" in result.reason.lower() or "asian" in result.reason.lower()
+
+    def test_overrides_when_regime_high_quality(self, cr_time):
+        result = vetos.veto_time_of_day({"side": "LONG"}, regime_pnl_per_trade=2.5,
+                                          now=cr_time(2026, 5, 5, 23, 0))
+        assert result.passed is True
+        assert "override" in result.reason.lower() or "ok" in result.reason.lower()
+
+    def test_blocks_at_3am_low_quality(self, cr_time):
+        result = vetos.veto_time_of_day({"side": "LONG"}, regime_pnl_per_trade=0.5,
+                                          now=cr_time(2026, 5, 5, 3, 0))
+        assert result.passed is False
