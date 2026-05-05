@@ -35,7 +35,7 @@ from pathlib import Path
 
 ASSETS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "MSTRUSDT", "AVAXUSDT",
           "INJUSDT", "DOGEUSDT", "WIFUSDT", "XLMUSDT"]
-DAYS = 15
+DAYS = 60
 MARGIN = 100.0
 LEVERAGE = 10
 NOTIONAL = MARGIN * LEVERAGE
@@ -451,6 +451,10 @@ def main():
     cells["UNKNOWN"] = {s: [] for s in STRATS}
     cells["MIXED"] = {s: [] for s in STRATS}
 
+    # Per-asset cells: cells_per_asset[asset][regime][strategy] = list of trades
+    cells_per_asset: dict = {a: {r: {s: [] for s in STRATS} for r in REGIMES + ["UNKNOWN", "MIXED"]}
+                              for a in ASSETS}
+
     print(f"{'='*80}")
     print(f"REGIME × STRATEGY MATRIX BACKTEST — {DAYS} días, {len(ASSETS)} assets")
     print(f"Margin ${MARGIN}, Lev {LEVERAGE}x, Fees {FEES_PCT}% RT")
@@ -458,8 +462,8 @@ def main():
 
     for sym in ASSETS:
         print(f"  {sym}...", file=sys.stderr)
-        b15 = fetch(sym, "15m", min(1500, 96 * DAYS))
-        b1h = fetch(sym, "1h", min(1500, 24 * DAYS + 60))
+        b15 = fetch_paginated(sym, "15m", days=DAYS)
+        b1h = fetch_paginated(sym, "1h", days=DAYS + 3)  # +3d cushion for 1h aggregations
         if not b15 or not b1h:
             continue
         last_trade_idx = {s: -100 for s in STRATS}
@@ -478,6 +482,7 @@ def main():
                 if result is None:
                     continue
                 cells[regime][sname].append({"asset": sym, **setup, **result})
+                cells_per_asset[sym][regime][sname].append({"asset": sym, **setup, **result})
                 last_trade_idx[sname] = i
 
     # ===== Output matrix =====
@@ -526,9 +531,45 @@ def main():
             mapping[regime] = None
             print(f"  {regime:<22} → INSUFFICIENT DATA (<5 trades any strategy)")
 
-    # ===== Export mapping JSON =====
+    # ===== Build per-asset mapping =====
+    per_asset_mapping: dict = {}
+    for asset in ASSETS:
+        per_asset_mapping[asset] = {}
+        for regime in REGIMES + ["UNKNOWN", "MIXED"]:
+            best = None
+            best_pnl = -9999
+            for sname in STRATS:
+                ts = cells_per_asset[asset][regime][sname]
+                if len(ts) < 10:  # threshold raised from 5 thanks to 60-day data
+                    continue
+                pnl = sum(t["pnl_usd"] for t in ts)
+                if pnl > best_pnl:
+                    best_pnl = pnl
+                    best = sname
+            if best:
+                ts = cells_per_asset[asset][regime][best]
+                wr = sum(1 for t in ts if t["pnl_usd"] > 0) / len(ts) * 100
+                if best_pnl > 0:  # only positive cells get promoted
+                    per_asset_mapping[asset][regime] = {
+                        "strategy": best, "n_trades": len(ts),
+                        "wr": wr, "pnl": best_pnl,
+                        "pnl_per_trade": best_pnl / len(ts),
+                    }
+        if not per_asset_mapping[asset]:
+            del per_asset_mapping[asset]  # don't write empty entries
+
+    # ===== Export mapping JSON (schema v2) =====
     out_file = Path(__file__).parent / "regime_mapping.json"
-    out_file.write_text(json.dumps(mapping, indent=2))
+    schema_v2 = {
+        "version": 2,
+        "vetos_enabled": ["macro", "blacklist", "correlation", "sentiment",
+                            "funding", "time_of_day"],
+        "dynamic_sizing": True,
+        "trail_sl_offset_atr": 0.2,
+        "global": mapping,
+        "per_asset": per_asset_mapping,
+    }
+    out_file.write_text(json.dumps(schema_v2, indent=2))
     print(f"\n✅ Mapping exportado a: {out_file}")
     print("   /punk-smart leerá este archivo para elegir estrategia por contexto.")
 
