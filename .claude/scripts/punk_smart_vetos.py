@@ -9,6 +9,8 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import time
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -57,6 +59,80 @@ def veto_blacklist(setup: dict, now, memory_dir=None) -> VetoResult:
                           f"{asset} blacklisted (2 SL streak)",
                           source="asset_sl_streaks.json")
     return VetoResult("blacklist", True, "clean", source="asset_sl_streaks.json")
+
+
+_FNG_CACHE: dict = {"value": None, "fetched_at": 0}
+_FUNDING_CACHE: dict = {}  # asset → {value, fetched_at}
+
+
+def _fng_now() -> int | None:
+    """Return current Fear & Greed value (0-100). Cache 1h."""
+    if time.time() - _FNG_CACHE["fetched_at"] < 3600 and _FNG_CACHE["value"] is not None:
+        return _FNG_CACHE["value"]
+    try:
+        with urllib.request.urlopen("https://api.alternative.me/fng/?limit=1",
+                                    timeout=5) as resp:
+            data = json.loads(resp.read())
+        v = int(data["data"][0]["value"])
+        _FNG_CACHE.update({"value": v, "fetched_at": time.time()})
+        return v
+    except Exception:
+        return None
+
+
+def _funding_now(asset: str) -> float | None:
+    """Return current 8h-funding-rate for asset. Cache 30 min."""
+    okx_id = asset.replace("USDT", "-USDT-SWAP")
+    cache = _FUNDING_CACHE.get(asset)
+    if cache and time.time() - cache["fetched_at"] < 1800:
+        return cache["value"]
+    try:
+        url = f"https://www.okx.com/api/v5/public/funding-rate?instId={okx_id}"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            data = json.loads(resp.read())
+        if data.get("code") != "0" or not data.get("data"):
+            return None
+        v = float(data["data"][0]["fundingRate"])
+        _FUNDING_CACHE[asset] = {"value": v, "fetched_at": time.time()}
+        return v
+    except Exception:
+        return None
+
+
+def veto_sentiment(setup: dict) -> VetoResult:
+    fng = _fng_now()
+    if fng is None:
+        return VetoResult("sentiment", True, "F&G unavailable — skipped",
+                          source="alternative.me/fng")
+    side = setup["side"].upper()
+    if side == "LONG" and fng >= 80:
+        return VetoResult("sentiment", False,
+                          f"F&G {fng} (extreme greed) vs LONG — contrarian veto",
+                          source="alternative.me/fng")
+    if side == "SHORT" and fng <= 20:
+        return VetoResult("sentiment", False,
+                          f"F&G {fng} (extreme fear) vs SHORT — contrarian veto",
+                          source="alternative.me/fng")
+    return VetoResult("sentiment", True, f"F&G {fng} OK",
+                      source="alternative.me/fng")
+
+
+def veto_funding(setup: dict) -> VetoResult:
+    fr = _funding_now(setup["asset"])
+    if fr is None:
+        return VetoResult("funding", True, "funding unavailable — skipped",
+                          source="okx funding-rate")
+    side = setup["side"].upper()
+    if side == "LONG" and fr >= 0.0005:
+        return VetoResult("funding", False,
+                          f"funding {fr*100:.4f}% vs LONG — too crowded long",
+                          source="okx funding-rate")
+    if side == "SHORT" and fr <= -0.0005:
+        return VetoResult("funding", False,
+                          f"funding {fr*100:.4f}% vs SHORT — too crowded short",
+                          source="okx funding-rate")
+    return VetoResult("funding", True, f"funding {fr*100:.4f}% OK",
+                      source="okx funding-rate")
 
 
 def veto_correlation(setup: dict, memory_dir=None) -> VetoResult:

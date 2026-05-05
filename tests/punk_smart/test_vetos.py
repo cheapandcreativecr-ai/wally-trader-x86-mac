@@ -70,3 +70,40 @@ class TestCorrelationVeto:
         result = vetos.veto_correlation({"asset": "ETHUSDT", "side": "SHORT"},
                                          memory_dir=tmp_profile_dir)
         assert result.passed is True
+
+
+class TestSentimentVeto:
+    def test_clear_when_neutral(self, monkeypatch):
+        monkeypatch.setattr(vetos, "_fng_now", lambda: 50)
+        assert vetos.veto_sentiment({"side": "LONG"}).passed
+        assert vetos.veto_sentiment({"side": "SHORT"}).passed
+
+    def test_blocks_long_when_extreme_greed(self, monkeypatch):
+        monkeypatch.setattr(vetos, "_fng_now", lambda: 85)
+        result = vetos.veto_sentiment({"side": "LONG"})
+        assert result.passed is False
+        assert "85" in result.reason or "greed" in result.reason.lower()
+
+    def test_blocks_short_when_extreme_fear(self, monkeypatch):
+        monkeypatch.setattr(vetos, "_fng_now", lambda: 15)
+        assert vetos.veto_sentiment({"side": "SHORT"}).passed is False
+
+    def test_allows_long_in_fear(self, monkeypatch):
+        monkeypatch.setattr(vetos, "_fng_now", lambda: 15)
+        assert vetos.veto_sentiment({"side": "LONG"}).passed
+
+
+class TestFundingVeto:
+    def test_clear_when_funding_neutral(self, monkeypatch):
+        monkeypatch.setattr(vetos, "_funding_now", lambda asset: 0.0001)
+        assert vetos.veto_funding({"asset": "BTCUSDT", "side": "LONG"}).passed
+
+    def test_blocks_long_when_funding_extreme_positive(self, monkeypatch):
+        monkeypatch.setattr(vetos, "_funding_now", lambda asset: 0.0006)
+        result = vetos.veto_funding({"asset": "BTCUSDT", "side": "LONG"})
+        assert result.passed is False
+        assert "funding" in result.reason.lower()
+
+    def test_blocks_short_when_funding_extreme_negative(self, monkeypatch):
+        monkeypatch.setattr(vetos, "_funding_now", lambda asset: -0.0006)
+        assert not vetos.veto_funding({"asset": "BTCUSDT", "side": "SHORT"}).passed
