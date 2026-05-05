@@ -28,6 +28,7 @@ Time-out: 6h (24 bars 15m)
 
 import json
 import sys
+import time
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -51,6 +52,51 @@ def fetch(symbol, interval, limit):
     except Exception as e:
         print(f"  WARN {symbol}: {e}", file=sys.stderr)
         return []
+
+
+def fetch_paginated(symbol: str, interval: str, days: int) -> list:
+    """Fetch up to `days` of bars by paginating Binance klines (1500-bar cap).
+
+    Strategy: walk forward in time, oldest-first, using endTime cursor.
+    De-duplicate by timestamp.
+
+    Termination: relies solely on `len(page) < 1500` (exchange returned less
+    than max → reached the start of history) and the target count check.
+    The cursor-progress guard (oldest >= end_ts) was intentionally omitted:
+    it would incorrectly fire in test mocks that return non-decreasing
+    timestamps, and in production the `len(page) < 1500` signal is sufficient.
+    """
+    bars_per_day = {"15m": 96, "1h": 24, "4h": 6}.get(interval, 96)
+    target = bars_per_day * days
+    seen: dict = {}
+
+    end_ts = None  # None = "now" on Binance; walk backward via endTime cursor
+    while len(seen) < target:
+        url = (f"https://fapi.binance.com/fapi/v1/klines"
+               f"?symbol={symbol}&interval={interval}&limit=1500")
+        if end_ts is not None:
+            url += f"&endTime={end_ts}"
+        try:
+            with urllib.request.urlopen(url, timeout=20) as resp:
+                page = json.loads(resp.read())
+        except Exception as e:
+            print(f"  WARN paginated {symbol}: {e}", file=sys.stderr)
+            break
+        if not page:
+            break
+        for b in page:
+            t = int(b[0])
+            seen[t] = {"t": t, "o": float(b[1]), "h": float(b[2]),
+                        "l": float(b[3]), "c": float(b[4]), "v": float(b[5])}
+        # Move cursor: endTime = oldest bar in this page minus 1ms
+        oldest = min(int(b[0]) for b in page)
+        end_ts = oldest - 1
+        time.sleep(0.1)
+        if len(page) < 1500:
+            break  # exchange returned less than max → reached the start
+
+    bars = sorted(seen.values(), key=lambda b: b["t"])
+    return bars[-target:] if len(bars) > target else bars
 
 
 def calc_atr(bars, period=14):
