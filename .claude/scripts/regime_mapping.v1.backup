@@ -1,0 +1,53 @@
+{
+  "STRONG_TREND_UP": {
+    "strategy": "A_VWAP",
+    "n_trades": 13,
+    "wr": 53.84615384615385,
+    "pnl": 33.08216658043253,
+    "pnl_per_trade": 2.544782044648656
+  },
+  "STRONG_TREND_DOWN": {
+    "strategy": "B_TrendPullback",
+    "n_trades": 12,
+    "wr": 33.33333333333333,
+    "pnl": -15.929287229912422,
+    "pnl_per_trade": -1.327440602492702
+  },
+  "WEAK_TREND_UP": {
+    "strategy": "A_VWAP",
+    "n_trades": 5,
+    "wr": 40.0,
+    "pnl": -0.7866229979709258,
+    "pnl_per_trade": -0.15732459959418515
+  },
+  "WEAK_TREND_DOWN": {
+    "strategy": "B_TrendPullback",
+    "n_trades": 15,
+    "wr": 53.333333333333336,
+    "pnl": 3.2900188404524187,
+    "pnl_per_trade": 0.21933458936349456
+  },
+  "RANGING": {
+    "strategy": "A_VWAP",
+    "n_trades": 9,
+    "wr": 55.55555555555556,
+    "pnl": 24.132464178043932,
+    "pnl_per_trade": 2.681384908671548
+  },
+  "SQUEEZE": {
+    "strategy": "B_TrendPullback",
+    "n_trades": 11,
+    "wr": 45.45454545454545,
+    "pnl": 5.887125831408283,
+    "pnl_per_trade": 0.535193257400753
+  },
+  "VOLATILE": null,
+  "UNKNOWN": null,
+  "MIXED": {
+    "strategy": "A_VWAP",
+    "n_trades": 29,
+    "wr": 44.827586206896555,
+    "pnl": 18.22203308328677,
+    "pnl_per_trade": 0.628345968389199
+  }
+}
