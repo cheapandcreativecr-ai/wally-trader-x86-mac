@@ -393,25 +393,34 @@ def strat_e_range_bounce(bars_15m, bars_1h, i):
 
 
 # ===== Simulator (cierre escalonado 50/50) =====
-def simulate(setup, future_bars, max_bars=24):  # 6h
+def simulate(setup, future_bars, max_bars=24, trail_sl_offset_atr: float = 0.2):  # 6h
     if setup is None:
         return None
     e = setup["entry"]; sl = setup["sl"]; tp1 = setup["tp1"]; tp2 = setup["tp2"]
     side = setup["side"]
     duration = 0
     sl_hit = tp1_hit = tp2_hit = False
+    sl_active = sl  # mutable: shifts to BE+offset after TP1
+    # Approximate ATR from setup distances (tp1-entry as proxy for half-ATR scale)
+    atr_proxy = abs(tp1 - e)
+    trail_sl = (e + trail_sl_offset_atr * atr_proxy) if side == "LONG" \
+               else (e - trail_sl_offset_atr * atr_proxy)
     for k, bar in enumerate(future_bars[:max_bars]):
         duration = (k + 1) * 15
         if side == "SHORT":
-            if bar["h"] >= sl:
+            if bar["h"] >= sl_active:
                 sl_hit = True; break
             if bar["l"] <= tp2 and not tp2_hit: tp2_hit = True
-            if bar["l"] <= tp1 and not tp1_hit: tp1_hit = True
+            if bar["l"] <= tp1 and not tp1_hit:
+                tp1_hit = True
+                sl_active = trail_sl  # move SL to BE - 0.2*ATR
         else:
-            if bar["l"] <= sl:
+            if bar["l"] <= sl_active:
                 sl_hit = True; break
             if bar["h"] >= tp2 and not tp2_hit: tp2_hit = True
-            if bar["h"] >= tp1 and not tp1_hit: tp1_hit = True
+            if bar["h"] >= tp1 and not tp1_hit:
+                tp1_hit = True
+                sl_active = trail_sl  # move SL to BE + 0.2*ATR
         if tp2_hit:
             break
     if sl_hit and not tp1_hit:
@@ -422,9 +431,15 @@ def simulate(setup, future_bars, max_bars=24):  # 6h
         d2 = abs(tp2 - e) / e
         pnl_pct = d1 * 0.5 + d2 * 0.5
         outcome = "TP2"
+    elif tp1_hit and sl_hit:
+        # TP1 hit then SL on trail (locks small profit)
+        d1 = abs(tp1 - e) / e
+        trail_lock = trail_sl_offset_atr * atr_proxy / e
+        pnl_pct = d1 * 0.5 + trail_lock * 0.5
+        outcome = "TP1_TRAIL_SL"
     elif tp1_hit:
         d1 = abs(tp1 - e) / e
-        pnl_pct = d1 * 0.5  # 50% TP1, 50% BE
+        pnl_pct = d1 * 0.5  # 50% TP1, 50% riding (timeout)
         outcome = "TP1"
     else:
         if len(future_bars) >= max_bars:
