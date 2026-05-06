@@ -143,6 +143,7 @@ no reemplaza el profile FTMO/retail real.
 - `/status` — estado adaptado al profile activo
 - `/punk-morning` — preparación pre-sesión bitunix con scan exhaustivo 10+ assets + Neptune setup en TV [solo bitunix]
 - `/punk-hunt` — caza autónoma cada ~1h: escanea 10 cripto, elige el mejor setup, score≥70, auto-loggea recomendación [solo bitunix]
+- `/punk-smart` v2 — regime-aware router 5-stage [solo bitunix]. Ver bloque dedicado más abajo.
 - `/signal SYMBOL SIDE entry sl=X tp=Y leverage=N` — valida señal externa Discord (auto-log si profile=bitunix)
 - `/log-outcome SYMBOL TP1|TP2|TP3|SL EXIT [--id N] [--pnl USD]` — cierra outcome de señal bitunix (cualquier origen)
 - Los demás (`/morning`, `/validate`, `/risk`, `/journal`) son profile-aware
@@ -272,6 +273,31 @@ Output: tabla markdown con WR/PF/Ret/DD por asset + flag automático si disparid
 | `macross.py` | EMA(9/21) cross detector | `/macross` |
 | `per_asset_backtest.py` | Backtest multi-asset comparativo | (script directo) |
 | `test_pdf_helpers.py` | 19 sanity tests, corre en `preprompt_check.sh` cada 1h | (auto) |
+
+### `/punk-smart` v2 (2026-05-05) — bitunix-only
+
+Regime-aware router con pipeline de 5 stages: kill-switch → per-asset mapping →
+strategy → 6-veto layer → dynamic sizing → trail-SL annotation. Backtest 60-day,
+schema v2 mapping con per-asset overrides (n≥10) + global fallback.
+
+- **Kill-switch:** 2 SLs en 4h activa PAUSE hasta el siguiente CR 00:00.
+- **Vetos (6):** macro events / blacklist asset / correlation bucket / sentiment
+  contrarian / funding contrarian / time-of-day weak window.
+- **Sizing:** `pnl_per_trade / 2.0` clipped a `[0.3, 1.5]` × $4 margin base.
+- **Trail SL:** TP1 hit → SL se mueve a BE + 0.2×ATR (anotado en setup).
+
+Rollback flags en `regime_mapping.json`:
+- `version: 1` → router cae a comportamiento v1 (sin per-asset, sin vetos, sin trail).
+- `vetos_enabled: []` → todos los setups pasan la veto layer.
+- `dynamic_sizing: false` → tamaño fijo $4 margin, sin multiplier.
+- `trail_sl_offset_atr: 0.0` → trail equivale a BE plano.
+
+Daily state reset launchd: `com.wally.bitunix-daily-reset` corre a CR 00:00 y
+trunca `asset_sl_streaks.json` + `sl_window.json` (los re-crea con esquema vacío).
+
+Ver: `docs/superpowers/specs/2026-05-05-punk-smart-v2-design.md`,
+`docs/backtest_findings_2026-05-05_punk_smart_v2.md` (gates fail strictly,
+mergeado con override explícito 2026-05-06; live-data > pre-launch tuning).
 
 ### Reglas de invalidación comunes
 
