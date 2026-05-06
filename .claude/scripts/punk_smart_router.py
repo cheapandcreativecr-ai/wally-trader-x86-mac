@@ -39,7 +39,8 @@ import regime_confidence as rc
 
 CR_OFFSET = state.CR_OFFSET
 ASSETS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "MSTRUSDT", "AVAXUSDT",
-          "INJUSDT", "DOGEUSDT", "WIFUSDT", "XLMUSDT"]
+          "INJUSDT", "DOGEUSDT", "WIFUSDT", "XLMUSDT",
+          "BCHUSDT", "STRKUSDT", "TONUSDT", "TRXUSDT", "PIPPINUSDT"]
 
 STRATEGY_FNS = {
     "A_VWAP": strat_a_vwap,

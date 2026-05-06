@@ -34,7 +34,8 @@ from datetime import datetime
 from pathlib import Path
 
 ASSETS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "MSTRUSDT", "AVAXUSDT",
-          "INJUSDT", "DOGEUSDT", "WIFUSDT", "XLMUSDT"]
+          "INJUSDT", "DOGEUSDT", "WIFUSDT", "XLMUSDT",
+          "BCHUSDT", "STRKUSDT", "TONUSDT", "TRXUSDT", "PIPPINUSDT"]
 DAYS = 60
 MARGIN = 100.0
 LEVERAGE = 10
