@@ -109,7 +109,7 @@ $NOTION_STATUS_LINE
 2. Max 3 trades/día
 3. 2 SLs → STOP día
 4. Nunca mover SL en contra
-5. Nunca leverage >10x
+5. Leverage cap profile-aware (retail/quantfury 10x, bitunix 20x, ftmo/fundingpips per-provider)
 6. 4/4 filtros obligatorios
 
 ## Agentes disponibles (auto-invocación)

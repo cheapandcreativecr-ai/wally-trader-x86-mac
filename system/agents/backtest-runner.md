@@ -210,4 +210,4 @@ NO commitear estos archivos (están en .gitignore).
 - Nunca recomendar una estrategia basado en <10 trades de backtest
 - Nunca ocultar el drawdown (incluso si el retorno es bueno)
 - Nunca decir "esta estrategia es garantizada" — siempre disclaimer
-- Nunca sugerir leverage >10x sin advertencia explícita de liquidación
+- Nunca sugerir leverage por encima del cap del profile activo sin advertencia explícita de liquidación (retail/quantfury 10x; bitunix 20x; tier-0 MUGRE 3x; sábado/domingo alts 5x)

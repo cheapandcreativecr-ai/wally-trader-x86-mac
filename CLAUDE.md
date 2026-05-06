@@ -93,7 +93,7 @@ no reemplaza el profile FTMO/retail real.
 - **Universo:** dinámico (lo que la comunidad punkchainer's señale en Discord — BTC, ETH, MSTRUSDT, altcoins)
 - **Watchlist exhaustivo (32 assets, prefix `Bitunix:.P` capitalizado):** 24 tradeables en Bitunix (BTC, ETH, SOL, MSTR, AVAX, INJ, DOGE, WIF, FARTCOIN, XLM, TON, ADA, LINK, SUI, TRX, RUNE, ENJ, CHZ, AXS, SEI, POL, HBAR, TIA, ROSE) + 8 sólo contexto vía fallback OKX/Binance/Bybit (PEPE, PIPPIN, BCH, MON, XAUT, STRK, XMR, BANANAS31) — pre-scaneado por `/punk-morning` y `/punk-hunt`. Scan completo ~3-5 min; usar `/punk-hunt quick` para top-5 líquidos.
 - **Validación:** 4 filtros + multifactor>±50 + ML>55 + chainlink delta <1%. Score >=60% → APPROVE
-- **Override leverage:** señales pueden decir 20x → tu sistema cap a **10x**
+- **Leverage cap:** sigue al leverage de la señal hasta **20x** (bitunix excepción del cap global 10x). Si señal pide >20x → WARN y consciencia operador, no override automático.
 - **Risk per signal:** 2% capital ($4 sobre $200). **Max 7 signals/día**, **max 2 concurrentes**. Auto-blacklist asset con 2 SLs
 - **Daily loss BLOCK:** -6% ($12 sobre $200, ~3 SLs)
 - **Objetivo PnL diario:** $20-100 (5+ wins / 7 attempts con WR comunidad ~70% y R:R 2:1 → 5:1)
@@ -131,7 +131,7 @@ no reemplaza el profile FTMO/retail real.
 4. **Guardian** (`.claude/scripts/guardian.py`) obligatorio en FTMO antes de cada entry.
 5. **Lite Guardian** (`.claude/scripts/fotmarkets_guard.sh`) obligatorio en fotmarkets antes de cada entry.
 6. **FundingPips Guardian** (`.claude/scripts/fundingpips_guard.sh`) obligatorio en fundingpips antes de cada entry.
-7. **Bitunix copy validation:** cada señal externa debe pasar `/signal` con score ≥60% antes de ejecutar. Override leverage de 20x → 10x cap.
+7. **Bitunix copy validation:** cada señal externa debe pasar `/signal` con score ≥60% antes de ejecutar. Leverage cap profile-específico: **20x** (no aplica el 10x global). >20x = WARN, no auto-override.
 8. **Quantfury BTC-aware:** medir todo en BTC, no USD. Si outperformance vs HODL <-2% mensual → PAUSAR profile 30 días.
 9. **Cross-asset BTC exclusion (CRÍTICO):** NO BTC simultáneo en retail + ftmo + fundingpips + bitunix + quantfury. Default: usar 1 profile por día.
 10. **Statusline** muestra `[PROFILE]` en todo momento para prevenir confusión.

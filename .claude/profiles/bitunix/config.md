@@ -136,7 +136,7 @@ Subset opt-in para `/punk-hunt --tier-0`. Tokens del canal `mugre-signals` de la
 | Max concurrent open positions | **2** simultáneas | BLOCK nuevas |
 | **Time-out por trade** | **90 min sin TP hit → cerrar manual** | regla anti-overstay |
 | Min validation score | 60% (4 confluencias Elite Crypto) | gate |
-| Max leverage | **10x** (NO usar 20x aunque la señal lo diga) | safety override |
+| Max leverage | **20x** — sigue al leverage de la señal (excepción del cap 10x global). >20x = WARN, no override automático | profile-specific |
 | Daily loss BLOCK | -6% capital ($12 sobre $200, ~3 SLs) | STOP día |
 | Max DD del capital | -30% ($60 sobre $200) | STOP profile + review |
 | Auto-blacklist asset | Después de 2 SLs consecutivos en mismo asset | filter |
@@ -205,13 +205,13 @@ La comunidad punkchainer's / Elite Crypto usa **7 indicadores Neptune** (Bangcha
    - Chainlink cross-check
    ↓
 [Veredicto]
-   GO confidence>=60 → recomienda EJECUTAR (override leverage 20→10)
+   GO confidence>=60 → recomienda EJECUTAR (sigue leverage de señal hasta 20x)
    NO-GO confidence<60 → SKIP, anota razón en memory/signals_received.md
    
 [Tú ejecutas manual en Bitunix]
    - Login Bitunix
    - Open MSTRUSDT-PERP, side SHORT
-   - Size: 2% del capital con leverage 10x (no 20x)
+   - Size: 2% del capital con el leverage que diga la señal (max 20x)
    - SL en 170, TPs escalonados
    
 [Tracking automático]
@@ -222,7 +222,7 @@ La comunidad punkchainer's / Elite Crypto usa **7 indicadores Neptune** (Bangcha
 ## Reglas cross-profile
 
 1. **NO copiar señal Bitunix de BTC si tienes posición BTC en retail/ftmo/quantfury.** Doble exposición = riesgo correlacionado.
-2. **Nunca exceder leverage 10x en Bitunix** aunque la señal pida 20x. (Las pérdidas escalan no-linealmente con leverage; el edge de la señal se mantiene mejor con leverage menor.)
+2. **Leverage en Bitunix sigue al de la señal hasta 20x cap**. Excepción documentada del cap 10x global del proyecto — porque la metodología punkchainer's opera en 15-20x con SLs ajustados. Si una señal pide >20x, WARN al operador pero sin override automático (decisión consciente). En tier-0 MUGRE el cap baja a 3x (ver `rules.md` #11).
 3. **Documentar SKIPS** — cada señal que rechaces va a `memory/signals_received.md`. Después puedes verificar si esa señal HUBIERA ganado (FOMO check).
 
 ## Setup inicial

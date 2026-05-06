@@ -85,19 +85,24 @@ Conteo desde `signals_received.csv` (entries con `outcome = _pendiente_`).
 | **FLAG** | Score 50-60 | Ejecutar size HALF (1%) — borderline |
 | **REJECT** | Score <50 | SKIP — log a signals_received.md |
 
-## 4. LEVERAGE CAP — 10x (override hard)
+## 4. LEVERAGE CAP — 20x (excepción profile-específica del cap 10x global)
 
-Las señales de la comunidad pueden decir 20x. **Tu sistema OVERRIDE a 10x.**
+Bitunix sigue al leverage de la señal hasta **20x**. Esta es la excepción declarada del cap 10x global del proyecto, justificada por la metodología punkchainer's: entries con SLs ajustados a estructura SMC + Reversal Bands → la liquidación a 20x rara vez se toca antes que el SL de la señal.
 
-| Señal pide | Tu ejecutas |
-|---|---|
-| 5x | 5x (igual) |
-| 10x | 10x (igual) |
-| 15x | 10x (cap) |
-| 20x | 10x (cap) |
-| 50x+ | **REJECT** — leverage absurdo, no hay setup que justifique |
+| Señal pide | Tu ejecutas | Comentario |
+|---|---|---|
+| 5x | 5x (igual) | low conviction acceptable |
+| 10x | 10x (igual) | conservador |
+| 15x | 15x (igual) | normal |
+| 20x | 20x (igual) | normal — leverage típico de la comunidad |
+| 25-50x | **WARN** | calcula distancia a liquidación; ejecución es decisión consciente, no override automático |
+| >50x | **REJECT** | absurdo, no hay setup que justifique |
+| Sin SL | **REJECT** | regla #1 — sin SL no se evalúa leverage |
 
-**Razón:** a 20x, un wick de 5% liquida tu posición ANTES del SL (que típicamente es 2-3%). El edge de la señal se preserva con leverage menor — solo el ratio del PnL en USD baja.
+**Excepciones a este cap (más estrictos):**
+- **Tier-0 MUGRE:** 3x cap hard (regla #11)
+- **Saturday/Sunday alts:** 5x cap (Saturday Precision Protocol)
+- **Asset blacklisted (#7):** 0x — no entry permitido
 
 ## 5. DAILY LOSS BLOCK — 3 SLs (≈-6% = $12 sobre $200)
 
@@ -198,7 +203,7 @@ SL puede ser señal del régimen, no random. Asset standard sigue con threshold 
 8. Hora dentro ventana? → si no, WARN/REJECT según hora
 9. Señal <4h vieja? → si no, REJECT
 10. Validation score ≥50? → si no, REJECT
-11. Leverage capped a 10x? → SI
+11. Leverage de la señal ≤20x (o ≤3x en tier-0 MUGRE, ≤5x en sábado/domingo)? → si >20x, WARN al operador
 12. Macro events gate (`macro_gate.py --check-now`) NO bloqueado? → si bloqueado, NO-GO
 
 → TODOS OK → APPROVE con size según score

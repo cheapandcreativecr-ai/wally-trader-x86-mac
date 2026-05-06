@@ -9,7 +9,7 @@
 | **Filosofía operativa** | **1 trade/hora rotativo** | Capturar lo que da el mercado en ventanas cortas, no esperar el "trade del día" |
 | Risk per signal | **2%** ($4.00 sobre $200) | Mismo que retail |
 | **Max margin per trade** | **30-35% capital** ($60-70 sobre $200) | Anti-concentración, permite 2 trades concurrentes con margen |
-| Max leverage | **10x** | Override a las señales de 20x para reducir riesgo asimétrico |
+| Max leverage | **20x** | Sigue al leverage de la señal (excepción del cap 10x global). >20x = WARN, no override automático |
 | Max signals/día | **10** (era 7, recalibrado) | Soporta filosofía rotación 1/h × 10-17h ventana |
 | Max concurrent open positions | **2** | No diluir atención en >2 setups simultáneos |
 | **Time-out por trade** | **90 min sin TP1 hit → cerrar manual o ajustar TPs** | Anti-overstay (filosofía rotativa) |
@@ -74,7 +74,7 @@ Sobre el chart con Neptune SMC cargado, verifica los 4 pilares de la comunidad
 
 Si fecha == sábado/domingo, gates más estrictos (ver `@punkchainer-playbook`):
 - Pillars **4/4 obligatorio** (no 3/4)
-- Leverage en alts **5x cap** (no 10x)
+- Leverage en alts **5x cap** (más estricto que el 20x weekday — viernes/sábado/domingo low-vol amplifica wicks)
 - DUREX trigger acelerado: **1R** (no 20% recorrido)
 - Solo entries Limit "sniper" (no market)
 - BTC dump → 🚫 0 longs en alts low-cap
@@ -82,7 +82,7 @@ Si fecha == sábado/domingo, gates más estrictos (ver `@punkchainer-playbook`):
 
 ### Paso 8: Veredicto final
 ```
-PASS_ALL_GATES (≥60% confidence + 4-pilar OK) → EJECUTAR con tu sizing (override leverage 20→10)
+PASS_ALL_GATES (≥60% confidence + 4-pilar OK) → EJECUTAR con tu sizing y leverage de la señal (max 20x cap)
 FLAG (50-60% confidence O 3/4 pilares) → ejecutar con HALF size (1% en vez de 2%)
 REJECT (<50% confidence O <3/4 pilares O Saturday rule violation) → SKIP, anotar razón
 ```
@@ -93,14 +93,14 @@ REJECT (<50% confidence O <3/4 pilares O Saturday rule violation) → SKIP, anot
 # Asume señal: MSTRUSDT short, entry 166.57, SL 170 (2.06% adverso)
 # Capital: $200, risk 2% = $4.00 max loss
 
-# Cálculo:
+# Cálculo (con leverage 20x de la señal):
 # - SL distance: |170 - 166.57| / 166.57 = 2.06% (señal pide SL en 170)
-# - Notional max @ 10x leverage: $4.00 / 0.0206 = $194.17
-# - Margin used: $194.17 / 10 = $19.42 (9.7% del capital)
+# - Notional max @ 20x: $4.00 / 0.0206 = $194.17 (igual notional, menor margin)
+# - Margin used: $194.17 / 20 = $9.71 (4.85% del capital)
 # - Qty MSTRUSDT: $194.17 / 166.57 = 1.166 unidades
 
 /signal MSTRUSDT short 166.57 sl=170 tp=160 leverage=20
-# → Sistema dice: "OK con override leverage 10x. Size 1.166 MSTRUSDT, margin $19.42"
+# → Sistema dice: "OK con leverage 20x (señal). Size 1.166 MSTRUSDT, margin $9.71"
 ```
 
 ## Concurrencia (regla NUEVA)
@@ -151,14 +151,15 @@ skill `@punkchainer-playbook` (paso 7 del pipeline).
 
 Ver skill `@punkchainer-glossary` para definición oficial completa.
 
-## Override de leverage (regla dura)
+## Leverage policy (profile-specific)
 
-Aunque la señal diga 20x, **siempre opera 10x max**. Por qué:
+Bitunix sigue al leverage de la señal hasta **20x cap**. Es excepción del cap 10x global del proyecto, justificada por la metodología punkchainer's (entries con SLs ajustados a estructura SMC + Reversal Bands → la liquidación a 20x rara vez se toca antes que el SL de la señal). Reglas:
 
-- Las señales de la comunidad usan leverage agresivo para mostrar % de profit grandes
-- Tu cuenta es pequeña — un wick puede liquidar a 20x antes de tocar SL
-- Reducir leverage a 10x **mantiene el R:R** (mismo SL distance) pero baja la prob de liquidación
-- Trade-off: tu PnL en USD es 50% menor que la señal mostrada — accept it
+- **≤20x:** ejecutar al leverage que diga la señal sin warning.
+- **>20x:** WARN al operador con cálculo de distancia a liquidación; ejecución es decisión consciente, no override automático.
+- **Tier-0 MUGRE (low-cap alts del subset opt-in):** cap **3x** hard (ver `rules.md` #11). La volatilidad y liquidez frágil hacen que 20x liquide en wicks normales.
+- **Saturday/Sunday alts:** cap **5x** (Saturday Precision Protocol). Low volume amplifica wicks.
+- **Sin SL en la señal:** REJECT antes de evaluar leverage. No copiar señales sin SL definido.
 
 ## Cuándo NO copiar (filtros adicionales)
 
@@ -186,7 +187,7 @@ Cada señal vista (haya sido copiada o rechazada) va a `memory/signals_received.
 
 **Señal:** entry 166.57, SL 170, TP 160, lev 20x
 **Mi sistema dice:** PASS (4/4 filtros, MF +62, ML 68, CL OK)
-**Decisión:** EJECUTAR con leverage override 10x
+**Decisión:** EJECUTAR con leverage 20x (señal)
 **Resultado:** TP1 hit en 165.61 → +$0.45 (después de fee)
 **Aprendizaje:** flow MSTR-correlated funcionó como esperado
 ```
@@ -217,5 +218,5 @@ Calculado por `/journal bitunix` automáticamente.
 | Risk per trade | 2% | 2% |
 | Max trades/día | 5 | 7 |
 | Concurrent positions | sin cap (1 asset) | max 2 simultáneas |
-| Leverage | 10x | 10x (override de 20x) |
+| Leverage | 10x | 20x cap (sigue señal) |
 | Métrica clave | WR + PnL | hit_rate_filtered vs hit_rate_all |

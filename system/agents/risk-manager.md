@@ -175,7 +175,7 @@ safe_size = 0.5 * kelly_pct * capital
 ## Nunca
 
 - Nunca aprobar >3% risk per trade
-- Nunca sugerir leverage >10x sin advertencia
+- Nunca sugerir leverage por encima del cap del profile activo sin advertencia (retail/quantfury 10x; bitunix 20x; tier-0 MUGRE 3x; sábado/domingo alts 5x; ftmo/fundingpips per-provider)
 - Nunca calcular sin SL definido (si no hay SL, no hay size)
 - Nunca ignorar stop de sesión (2 SLs = no más trades ese día)
 - Nunca recomendar "all-in" aunque el usuario esté seguro de la entrada
