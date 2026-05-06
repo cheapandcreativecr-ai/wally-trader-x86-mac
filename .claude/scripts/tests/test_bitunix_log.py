@@ -14,9 +14,14 @@ def run_log(args, cwd, env=None, stdin=None):
     full_env = os.environ.copy()
     if env:
         full_env.update(env)
+    # Always provide stdin as an empty pipe when not passed — guarantees the
+    # subprocess sees a non-TTY stdin on every platform (Windows inherits a
+    # console handle by default and sys.stdin.isatty() then returns True,
+    # causing interactive input() prompts to fire and EOFError).
     return subprocess.run(
         ["python3", str(SCRIPT), *args],
-        capture_output=True, text=True, cwd=cwd, env=full_env, input=stdin
+        capture_output=True, text=True, cwd=cwd, env=full_env,
+        input=stdin if stdin is not None else "",
     )
 
 
