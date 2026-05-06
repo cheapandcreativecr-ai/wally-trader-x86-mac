@@ -376,8 +376,15 @@ def cmd_append_outcome(args: argparse.Namespace) -> int:
 
     held = True  # default optimistic; skip interactive prompt in non-tty (tests/pipes)
     if sys.stdin.isatty():
-        ans = input("Held 4-pilar al exit? [Y/n] ").strip().lower()
-        held = ans != "n"
+        # On Windows, isatty() can return True even for piped stdin when the
+        # subprocess inherits a console handle. Catching EOFError lets us fall
+        # back to the optimistic default whether the prompt path is reached
+        # under a real TTY or a misreporting handle.
+        try:
+            ans = input("Held 4-pilar al exit? [Y/n] ").strip().lower()
+            held = ans != "n"
+        except EOFError:
+            held = True
 
     try:
         update_md_outcome(md_path, start, end, args.outcome, args.exit_price,
