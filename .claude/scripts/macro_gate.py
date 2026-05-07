@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """macro_gate.py — read-only CLI for the macro events cache.
+Delegates cache loading to wally_core.macro (zero behavior change).
 
 Subcommands:
   --check-now           : is "right now" inside ±30 min of a high-impact event?
@@ -17,13 +18,20 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+# Auto-inject wally_core from worktree (no venv activation required)
+_SHARED = Path(__file__).resolve().parent.parent.parent / "shared/wally_core/src"
+if _SHARED.exists() and str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from wally_core.macro import _load_cache as _wc_load_cache, CR_OFFSET  # noqa: E402
+
 DEFAULT_CACHE = Path(__file__).parent.parent / "cache" / "macro_events.json"
 WINDOW_MINUTES = 30
 STALE_HOURS = 24
-CR_OFFSET = timezone(timedelta(hours=-6))
 
 
 def load_cache(path: Path) -> dict[str, Any] | None:
+    """Load macro events cache from `path`, with stderr diagnostics on error."""
     if not path.exists():
         return None
     try:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 ADX(14) + Directional Movement (+DI / -DI) calculator.
+Delegates ADX math to wally_core.regime (zero behavior change).
 
 Usage:
     # Pipe OHLCV JSON via stdin:
@@ -21,81 +22,22 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import Iterable
+from pathlib import Path
 
+# Auto-inject wally_core from worktree (no venv activation required)
+_SHARED = Path(__file__).resolve().parent.parent.parent / "shared/wally_core/src"
+if _SHARED.exists() and str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
-def _wilder_smooth(values: list[float], length: int) -> list[float]:
-    """Wilder's RMA smoothing (used in ADX)."""
-    if len(values) < length:
-        return []
-    out = [sum(values[:length])]
-    for v in values[length:]:
-        out.append(out[-1] - (out[-1] / length) + v)
-    return out
-
-
-def adx(bars: list[dict], length: int = 14) -> dict:
-    """
-    Compute ADX, +DI, -DI series from OHLCV bars (Wilder method).
-    Returns dict with arrays and last values.
-    """
-    n = len(bars)
-    if n < length * 2 + 1:
-        return {"error": f"need at least {length*2+1} bars, got {n}"}
-
-    highs = [float(b.get("h") or b.get("high")) for b in bars]
-    lows = [float(b.get("l") or b.get("low")) for b in bars]
-    closes = [float(b.get("c") or b.get("close")) for b in bars]
-
-    plus_dm: list[float] = []
-    minus_dm: list[float] = []
-    tr: list[float] = []
-    for i in range(1, n):
-        up_move = highs[i] - highs[i - 1]
-        down_move = lows[i - 1] - lows[i]
-        plus_dm.append(up_move if up_move > down_move and up_move > 0 else 0.0)
-        minus_dm.append(down_move if down_move > up_move and down_move > 0 else 0.0)
-        tr_v = max(
-            highs[i] - lows[i],
-            abs(highs[i] - closes[i - 1]),
-            abs(lows[i] - closes[i - 1]),
-        )
-        tr.append(tr_v)
-
-    sm_tr = _wilder_smooth(tr, length)
-    sm_plus = _wilder_smooth(plus_dm, length)
-    sm_minus = _wilder_smooth(minus_dm, length)
-    if not sm_tr or not sm_plus or not sm_minus:
-        return {"error": "smoothing failed (insufficient data)"}
-
-    plus_di = [100 * (p / t) if t > 0 else 0.0 for p, t in zip(sm_plus, sm_tr)]
-    minus_di = [100 * (m / t) if t > 0 else 0.0 for m, t in zip(sm_minus, sm_tr)]
-    dx = [
-        100 * abs(p - m) / (p + m) if (p + m) > 0 else 0.0
-        for p, m in zip(plus_di, minus_di)
-    ]
-    if len(dx) < length:
-        return {"error": f"DX series too short ({len(dx)}<{length})"}
-
-    adx_series: list[float] = [sum(dx[:length]) / length]
-    for v in dx[length:]:
-        adx_series.append((adx_series[-1] * (length - 1) + v) / length)
-
-    return {
-        "adx": adx_series,
-        "plus_di": plus_di,
-        "minus_di": minus_di,
-        "last_adx": round(adx_series[-1], 2),
-        "last_plus_di": round(plus_di[-1], 2),
-        "last_minus_di": round(minus_di[-1], 2),
-        "last_close": closes[-1],
-        "bars_used": n,
-        "length": length,
-    }
+from wally_core.regime import compute_adx  # noqa: E402
 
 
 def label_regime(adx_val: float, plus_di: float, minus_di: float) -> tuple[str, str]:
-    """Map ADX value + DI direction → (regime_label, strategy_recommendation)."""
+    """Map ADX value + DI direction → (regime_label, strategy_recommendation).
+
+    Kept local because wally_core.regime.label_regime returns a simple enum
+    without directional suffixes or strategy hints used by this CLI's output.
+    """
     direction = "LONG_BIAS" if plus_di > minus_di else "SHORT_BIAS"
     diff = abs(plus_di - minus_di)
     if diff < 2:
@@ -110,6 +52,17 @@ def label_regime(adx_val: float, plus_di: float, minus_di: float) -> tuple[str, 
     if adx_val < 40:
         return f"TREND_FUERTE_{direction}", "Breakout/Momentum, evitar reversiones"
     return f"TREND_EXTREMO_{direction}", "NO scalping reversal — solo runners trend"
+
+
+def _normalize_bar(b: dict) -> dict:
+    """Normalize h/l/c/o keys to high/low/close/open (wally_core convention)."""
+    return {
+        "open": float(b.get("open") or b.get("o") or 0),
+        "high": float(b.get("high") or b.get("h")),
+        "low": float(b.get("low") or b.get("l")),
+        "close": float(b.get("close") or b.get("c")),
+        "volume": float(b.get("volume") or b.get("v") or 0),
+    }
 
 
 def load_bars(source: str | None) -> list[dict]:
@@ -142,25 +95,39 @@ def main() -> int:
         print(f"ERROR loading bars: {e}", file=sys.stderr)
         return 2
 
-    res = adx(bars, args.length)
-    if "error" in res:
-        print(f"ERROR: {res['error']}", file=sys.stderr)
+    n = len(bars)
+    min_bars = args.length * 2 + 1
+    if n < min_bars:
+        print(f"ERROR: need at least {min_bars} bars, got {n}", file=sys.stderr)
         return 3
 
-    regime, strat = label_regime(res["last_adx"], res["last_plus_di"], res["last_minus_di"])
+    normalized = [_normalize_bar(b) for b in bars]
+    last_close = normalized[-1]["close"]
+
+    try:
+        res = compute_adx(normalized, length=args.length)
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 3
+
+    last_adx = res["adx"]
+    last_plus_di = res["plus_di"]
+    last_minus_di = res["minus_di"]
+
+    regime, strat = label_regime(last_adx, last_plus_di, last_minus_di)
     if args.quick:
         print(
-            f"ADX={res['last_adx']} +DI={res['last_plus_di']} "
-            f"-DI={res['last_minus_di']} REGIME={regime} BARS={res['bars_used']}"
+            f"ADX={last_adx} +DI={last_plus_di} "
+            f"-DI={last_minus_di} REGIME={regime} BARS={n}"
         )
     else:
         print(json.dumps({
-            "last_adx": res["last_adx"],
-            "last_plus_di": res["last_plus_di"],
-            "last_minus_di": res["last_minus_di"],
+            "last_adx": last_adx,
+            "last_plus_di": last_plus_di,
+            "last_minus_di": last_minus_di,
             "regime": regime,
             "strategy_hint": strat,
-            "bars_used": res["bars_used"],
+            "bars_used": n,
             "length": args.length,
         }, indent=2))
     return 0

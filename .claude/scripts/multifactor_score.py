@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 multifactor_score.py — Multi-Factor scoring 0-100 adaptado a cripto/forex.
+Imports wally_core.multifactor for the composite_score API; keeps local
+sub-scorers because they compute a richer breakdown (RSI/ADX/EMA details,
+ATR percentile, volume spike) not exposed by wally_core.multifactor.
 
 Factores (cripto-friendly, sin fundamentals):
   1. Momentum   (0-25): RSI(14) + ADX(14) direccional + EMA20 vs EMA50
@@ -23,6 +26,13 @@ import json
 import math
 import sys
 from pathlib import Path
+
+# Auto-inject wally_core from worktree (no venv activation required)
+_SHARED = Path(__file__).resolve().parent.parent.parent / "shared/wally_core/src"
+if _SHARED.exists() and str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+from wally_core.multifactor import composite_score as _wc_composite_score  # noqa: E402, F401
 
 
 def parse_bars(path):

@@ -7,6 +7,22 @@
       "args": ["./tradingview-mcp/src/server.js"],
       "env": {},
       "enabled": true
+    },
+    "wally": {
+      "type": "stdio",
+      "command": "shared/wally_core/.venv/bin/python",
+      "args": ["-m", "wally_trader_mcp"],
+      "env": {},
+      "enabled": true
+    },
+    "notion": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "NOTION_API_KEY": "${NOTION_API_KEY}"
+      },
+      "enabled": true
     }
   }
 }
