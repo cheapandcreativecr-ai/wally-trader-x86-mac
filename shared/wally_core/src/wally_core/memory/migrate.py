@@ -38,9 +38,14 @@ def _cli():
     p.add_argument("--profile", required=True)
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--rollback", action="store_true")
+    p.add_argument("--sync-pull", action="store_true")
     args = p.parse_args()
     if args.rollback:
         print(rollback_profile(args.profile))
+    elif args.sync_pull:
+        from .hybrid import HybridBackend
+        n = HybridBackend().sync_pull(args.profile)
+        print({"imported": n})
     else:
         print(migrate_profile(args.profile, dry_run=args.dry_run))
 

@@ -115,6 +115,20 @@ class HybridBackend(MemoryBackend):
                 f.write(json.dumps(op) + "\n")
         tmp.replace(qpath)
 
+    def sync_pull(self, profile: str) -> int:
+        """Force-fetch all Notion signals → write to local CSV (idempotent on UUID)."""
+        notion = self._notion_handle()
+        if notion is None:
+            raise RuntimeError("Notion offline — cannot sync_pull")
+        local_ids = {s.id for s in self.local.read_signals(profile)}
+        imported = 0
+        for s in notion.read_signals(profile):
+            if s.id in local_ids:
+                continue
+            self.local.append_signal(profile, s)
+            imported += 1
+        return imported
+
     def health_check(self) -> dict:
         depths = {}
         for prof_dir in self.local.profiles_dir.glob("*"):
