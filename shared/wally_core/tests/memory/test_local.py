@@ -92,3 +92,17 @@ def test_concurrent_writes_preserve_all_rows(tmp_path, monkeypatch):
     rows = csv_path.read_text().strip().split("\n")
     # header + 50 signal rows (5 processes × 10 signals each)
     assert len(rows) == 51, f"Expected 51 lines (header + 50 rows), got {len(rows)}"
+
+
+def test_get_backend_returns_hybrid_by_default(tmp_path, monkeypatch):
+    monkeypatch.setenv("WALLY_PROFILES_DIR", str(tmp_path / "profiles"))
+    monkeypatch.delenv("WALLY_MEMORY_BACKEND", raising=False)
+    from wally_core.memory import get_backend
+    backend = get_backend("bitunix")
+    assert backend.__class__.__name__ == "HybridBackend"
+
+def test_get_backend_respects_env_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("WALLY_PROFILES_DIR", str(tmp_path / "profiles"))
+    monkeypatch.setenv("WALLY_MEMORY_BACKEND", "local")
+    from wally_core.memory import get_backend
+    assert get_backend("bitunix").__class__.__name__ == "LocalBackend"
