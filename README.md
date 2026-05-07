@@ -1025,6 +1025,186 @@ Recalibra el modelo con data reciente para adaptarse al régimen. Verifica AUC e
 
 ---
 
+## 🤖 One-shot install prompt (copy-paste para cualquier AI CLI)
+
+> Para instalar Wally Trader **en un solo paso** desde Claude Code, OpenCode, Cursor, OpenClaw, Codex, Aider o cualquier asistente AI con acceso a shell. Copia el bloque de abajo y pégalo como primer prompt en una sesión nueva apuntando a tu carpeta de trabajo. El asistente clonará el repo (si hace falta), detectará tu OS, instalará deps, configurará MCPs reales del proyecto y dejará el sistema listo para `claude` / `opencode`.
+
+<details>
+<summary><strong>📋 Click para expandir el prompt instalador</strong></summary>
+
+````
+You are an autonomous AI infrastructure engineer. Install, configure and run the
+Wally Trader repository (https://github.com/sasasamaes/wally-trader) end-to-end on
+this machine. Do NOT ask the user questions — infer, retry on errors, document.
+
+================================================================
+SCOPE — what Wally Trader actually is (read before acting)
+================================================================
+- Triple-profile trading workstation orchestrated by Claude Code / OpenCode /
+  Codex over TradingView MCP. NOT a backend service, NOT a Docker stack.
+- Profiles (isolated memory + rules): retail (Binance/BingX), retail-bingx,
+  ftmo, fundingpips (MT5), fotmarkets (MT5), bitunix (copy-trading), quantfury.
+- Single source of truth: `system/` (commands, agents, skills, mcp).
+  Adapters in `adapters/` symlink/transform into `.claude/` (Claude Code),
+  `.opencode/` (OpenCode), Codex toml.
+- Cross-platform: macOS / Linux / Windows. Canonical scripts in Python at
+  `.claude/scripts/*.py` with bash + .cmd wrappers.
+- The ONLY MCP this repo ships and requires is TradingView MCP (git submodule
+  at `tradingview-mcp/`). Notion MCP is optional and user-supplied.
+- Manual MT5 broker setup is OUT OF SCOPE for this script (user-only).
+
+================================================================
+STEP 1 — CLONE + DISCOVERY
+================================================================
+- If repo not present in CWD: `git clone --recurse-submodules
+  https://github.com/sasasamaes/wally-trader.git && cd wally-trader`
+- If repo IS present: `git submodule update --init --recursive`
+- Read in this order: README.md (top 200 lines + "Setup inicial" + "Cross-platform"
+  sections), CLAUDE.md, AGENTS.md, system/README.md, .gitmodules, setup.py,
+  setup.sh, system/mcp/servers.json, opencode.json, .claude/settings*.json
+  (only example files — never read user secrets).
+- Detect OS (uname / $OS), CLI present (`which claude`, `which opencode`,
+  `which codex`), Python version, Node version.
+
+================================================================
+STEP 2 — CORE TOOLING (install only what is missing)
+================================================================
+Required:
+  - git, python3.9+, pip, node.js LTS (>=18), npm
+Recommended:
+  - jq, curl, direnv
+Per OS:
+  - macOS: `brew install` for any missing piece. If brew absent, install brew first.
+  - Linux (Debian/Ubuntu): `sudo apt update && sudo apt install -y …`
+  - Windows: prefer Git Bash; assume user already has Python + Git for Windows;
+    if not, document the exact winget/python.org install steps and STOP this step.
+
+DO NOT install Docker — this repo does not use Docker.
+
+================================================================
+STEP 3 — REPO INSTALLER (use the project's own one-shot)
+================================================================
+Run the canonical installer (it auto-detects OS, installs Python deps,
+generates OpenCode/Hermes adapters, and runs smoke tests):
+
+  bash setup.sh         # macOS / Linux / Git Bash
+  python setup.py       # any OS (works on native Windows too)
+  .claude\scripts\win\setup.cmd     # Windows native cmd
+
+If pip dep resolution fails: retry with `--quick` (skips plyer/vader).
+If a single Python dep fails: install it manually with pip and re-run setup.
+
+================================================================
+STEP 4 — TRADINGVIEW MCP (the only mandatory MCP)
+================================================================
+- Submodule lives at `tradingview-mcp/`. After clone with --recurse-submodules
+  it is already present.
+- Install its Node deps: `cd tradingview-mcp && npm install && cd ..`
+- The MCP entry is wired automatically:
+  - Claude Code reads `.mcp.json` (already committed at repo root, points to
+    `./tradingview-mcp/src/server.js`).
+  - OpenCode reads `opencode.json`.
+- TradingView Desktop must be launched by the USER with remote debugging on
+  port 9222 BEFORE starting an analysis session. Document the launch command
+  for their OS in TROUBLESHOOTING.md (see step 9). Do NOT attempt to launch it.
+
+================================================================
+STEP 5 — OPTIONAL MCPs (only if the user already has credentials)
+================================================================
+Check for env vars / existing config before configuring any of these.
+If credentials are missing, SKIP and add a note to FULL_SETUP.md.
+
+  - Notion MCP   → only if `NOTION_API_KEY` exists in env or `.env`.
+                   Reference: docs/NOTION_SETUP.md inside the repo.
+  - GitHub MCP   → only if `GITHUB_TOKEN` exists. Useful for `/review`.
+  - Filesystem / Memory / Sequential-Thinking / Fetch MCPs from
+    https://github.com/modelcontextprotocol/servers — install ONLY if user
+    already has them globally; do NOT add them to this repo's mcp config
+    unless asked. They are not part of the Wally Trader contract.
+
+DO NOT invent SQLite/Postgres/Redis MCPs — Wally Trader is file-based
+(JSON/CSV/MD under `.claude/profiles/<profile>/memory/`). No DB exists.
+
+================================================================
+STEP 6 — ENV FILE
+================================================================
+Create `.env` at repo root if missing, with these placeholders + comments
+(never overwrite an existing .env, never commit it — `.gitignore` already
+excludes it):
+
+  # Required only for ML / sentiment features:
+  # ANTHROPIC_API_KEY=
+  # Optional integrations:
+  # NOTION_API_KEY=
+  # NOTION_DATABASE_ID=
+  # GITHUB_TOKEN=
+  # Trading broker bridges (MT5 EA reads these from MT5 itself, NOT from .env)
+
+================================================================
+STEP 7 — SMOKE TESTS
+================================================================
+Run, in order, and report pass/fail for each:
+  python .claude/scripts/profile.py get
+  python .claude/scripts/fx_rate.py
+  python .claude/scripts/notify.py "Wally" "Install OK"
+  python -m pytest tests/ -q     # 84 tests expected to pass
+  node tradingview-mcp/src/server.js --help     # MCP boots
+
+If any pytest test fails: print the failing test name, the first 30 lines of
+its traceback, and continue. Do not abort the install over test failures.
+
+================================================================
+STEP 8 — PROFILE SELECTION (interactive ONE-LINER, optional)
+================================================================
+After setup, suggest the user pick a profile by running:
+  python .claude/scripts/profile.py set retail
+  # or: ftmo | fundingpips | fotmarkets | bitunix | quantfury | retail-bingx
+This is the only manual decision required.
+
+================================================================
+STEP 9 — DOCUMENTATION DELTAS
+================================================================
+Generate ONLY if missing (do not overwrite existing docs):
+  - INSTALL_REPORT.md  → what was installed, OS detected, versions, MCPs wired,
+                          TVDesktop launch command for this OS, next steps.
+  - TROUBLESHOOTING.md → only append your findings; do not duplicate the
+                          existing Troubleshooting section in README.md.
+
+================================================================
+STEP 10 — FINAL OUTPUT
+================================================================
+Print exactly:
+  1. OS detected
+  2. Runtimes: python X.Y, node X.Y
+  3. CLIs detected: claude / opencode / codex (yes/no each)
+  4. MCPs configured: tradingview (mandatory), notion/github (if creds)
+  5. Tests: <passed>/<total>
+  6. Profile active: <name> (or "none — run profile.py set <name>")
+  7. Launch command for this OS:
+       macOS:   `claude` (or `opencode`)
+       Linux:   `claude` (or `opencode`)
+       Windows: `opencode` (recommended) or `claude` if installed
+  8. Manual steps remaining (TradingView Desktop launch with port 9222,
+     MT5 broker login if profile is ftmo/fundingpips/fotmarkets, etc.)
+
+================================================================
+RULES
+================================================================
+- NEVER commit secrets. NEVER push. NEVER `git add .env`.
+- NEVER fabricate Docker/Postgres/Redis where none exists.
+- NEVER overwrite the user's existing `.claude/profiles/<profile>/memory/`.
+- Prefer the repo's own `setup.py` over reinventing install logic.
+- On any error: try once more with verbose output, then document and continue.
+- Stay in the repo working directory — do not modify $HOME beyond the
+  symlinks `setup.py` itself creates.
+````
+
+</details>
+
+**Resultado esperado:** sistema instalado, tests pasando (84/84), TradingView MCP wired, profile activo elegido por el usuario. Lo único que el asistente NO hace es lanzar TradingView Desktop con el puerto de debug (paso manual del usuario) ni loguearte en MT5/exchange (manual).
+
+---
+
 ## 🔧 Setup inicial
 
 ### Requisitos

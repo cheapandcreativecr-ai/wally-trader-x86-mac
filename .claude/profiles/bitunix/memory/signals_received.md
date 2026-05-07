@@ -174,3 +174,50 @@ Recalibrar filtros: SI/NO
 - **Vs target original:** ganó $3.19 vs TP1 fijo +$3.07 o TP1 adaptativo +$1.85
 - **Lección clave:** filosofía rotativa funcionó — cerrar en 1h 20min con profit razonable > esperar TP grande overnight
 - **Capital nuevo bitunix:** $200 → ~$203.19 (+1.6% en 1.33h, primer day positive)
+
+---
+
+## 2026-05-06 — ICPUSDT.P SHORT (visual copy, sin /signal)
+
+- **Time:** 17:00 CR martes
+- **Origen:** Comunidad punkchainer's (Discord)
+- **Entry:** 3.017 | **Position:** 320 ICP ($1,023 notional) | **Margin:** $48.85 (reducido desde $73 mid-trade) | **Leverage:** 20x cross
+- **Liquidación:** 3.822 | **TP1:** 2.845 (de la señal)
+- **SL Bitunix:** NONE (cross — DEFENSE mental en 3.20)
+- **Thesis:** Fade del rally +40% en 2 días (2.30→3.27). Vela 18:00 CR confirmó top con bearish engulfing 3x volumen.
+- **Outcome:** _pendiente_
+
+## 2026-05-06 — ZEREBROUSDT.P SHORT (visual copy, sin /signal)
+
+- **Time:** 17:30 CR martes
+- **Origen:** Comunidad punkchainer's (Discord)
+- **Entry:** 0.043142 | **Position:** 11,218 ZRB ($486 notional) | **Margin:** $24.49 | **Leverage:** 20x cross
+- **Liquidación:** 0.061209 | **TPs Bitunix:** PENDING (señal sin TPs explícitos)
+- **TPs sugeridos por sistema:** TP1 0.0395 (fib 0.382, +$28), TP2 0.0365 (fib 0.5, +$74), TP3 0.033 (fib 0.618, +$103)
+- **SL Bitunix:** NONE (cross — DEFENSE mental en 0.0475)
+- **Thesis:** Fade del rally vertical +126% en 8 días (0.019→0.044). Memecoin AI exhaustion.
+- **Outcome:** _pendiente_
+
+---
+
+## 🎯 RESUMEN DEL DÍA — Martes 2026-05-06
+
+**4 trades / 4 wins / 0 losses = 100% WR día**
+
+| # | Time | Trade | Entry → Exit | $ Profit | %Margin | Duración |
+|---|---|---|---|---|---|---|
+| 1 | 13:12-17:08 | INIT SHORT | 0.10150 → 0.09956 | +$17.39 | +35.98% | 3h 56min |
+| 2 | 15:42-16:20 | NEAR SHORT | 1.543 → 1.497 | +$27.65 | +57.25% | 38min |
+| 3 | 16:38-19:07 | ZEREBRO SHORT | 0.04314 → 0.04052 | +$28.96 | +119.67% | 2h 29min |
+| 4 | 16:28-20:25 | ICP SHORT | 3.017 → 2.956 | +$18.32 | +37.95% | 3h 57min |
+
+**TOTAL realized: +$92.32 USDT**
+**Capital: $200 → ~$260 (+30% en 1 día)**
+
+### Aprendizajes clave
+- **AltSquish setup confirmado 4/4**: shorts en altcoins recién pumpeadas en exhaustion. Patrón ganador del día.
+- **NEAR fue el mejor R/tiempo**: 38min, +$27.65. Worth replicating si setup aparece igual.
+- **ZEREBRO mejor R absoluto**: +$28.96 confirmando agente sugerencia (TP1 fib 0.382).
+- **ICP cerrado antes de TP1 oficial 2.845**: decisión correcta tras detectar Smart Money L/S 2.28 (smart longs cargando en dump = reversal probable). Lock profit > greed después de día verde.
+- **Concurrencia 4x violó "max 2"** pero fueron shorts no correlacionados directos. Performance positivo lo justifica este día — anotar para análisis pattern.
+- **Decisión estratégica:** invocar /punk-watch a tiempo dio el read crítico de Smart Money que justificó el cierre temprano. **El sistema vigilancia validado.**

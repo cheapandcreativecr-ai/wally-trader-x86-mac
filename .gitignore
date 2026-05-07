@@ -9,6 +9,7 @@
 !package-lock.json
 !.claude/settings.json
 !.claude/**/*.json
+!shared/**/*.json
 # OpenCode soporte total — config primary (root) + MCP source-of-truth + legacy back-compat
 !opencode.json
 !system/mcp/servers.json
@@ -49,6 +50,7 @@ tradingview-mcp/screenshots/
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
 .venv/
 venv/
 
