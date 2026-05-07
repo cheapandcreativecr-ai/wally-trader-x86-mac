@@ -230,4 +230,24 @@ def write_config_json(sys_mcp_path, out_dir, use_openrouter: bool = False):
 
 
 if __name__ == '__main__':
+    import argparse
+    p = argparse.ArgumentParser(
+        description="Translate Claude Code agents/commands to OpenClaw skills and emit config.json"
+    )
+    p.add_argument(
+        "--openrouter",
+        action="store_true",
+        help="Use OpenRouter as the model provider (default: Anthropic API direct)",
+    )
+    args = p.parse_args()
+
+    # Run the existing translation pipeline
     main()
+
+    # Emit config.json with model selection
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    write_config_json(
+        sys_mcp_path=repo_root / "system/mcp/servers.json",
+        out_dir=repo_root / ".openclaw",
+        use_openrouter=args.openrouter,
+    )

@@ -16,7 +16,11 @@ python3 -c "import yaml" 2>/dev/null || {
 
 # First generation
 echo "🔄 Generating .openclaw/skills/ from system/..."
-python3 "$REPO/adapters/openclaw/transform.py"
+USE_OR=""
+if [[ "${WALLY_USE_OPENROUTER:-0}" == "1" ]]; then
+  USE_OR="--openrouter"
+fi
+python3 "$REPO/adapters/openclaw/transform.py" $USE_OR
 
 # Symlink to ~/.openclaw/skills/wally-trader/ if OpenClaw is installed
 OPENCLAW_HOME="${OPENCLAW_HOME:-$HOME/.openclaw}"
