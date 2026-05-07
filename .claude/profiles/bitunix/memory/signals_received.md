@@ -221,3 +221,33 @@ Recalibrar filtros: SI/NO
 - **ICP cerrado antes de TP1 oficial 2.845**: decisión correcta tras detectar Smart Money L/S 2.28 (smart longs cargando en dump = reversal probable). Lock profit > greed después de día verde.
 - **Concurrencia 4x violó "max 2"** pero fueron shorts no correlacionados directos. Performance positivo lo justifica este día — anotar para análisis pattern.
 - **Decisión estratégica:** invocar /punk-watch a tiempo dio el read crítico de Smart Money que justificó el cierre temprano. **El sistema vigilancia validado.**
+
+## 2026-05-07 11:06 — BZUSDT.P LONG 20x
+
+**Señal recibida:** entry 97.33, SL 95.50, TP 98.12, leverage 20x
+**Source:** punkchainer Discord
+**Tier:** standard
+**Day-of-week:** Wed
+
+**Pipeline validación (8 steps):**
+  1. Parse OK
+  2. 4 filtros técnicos: 2/4
+  3. Multi-Factor: -65 (LONG) | ML: 
+  4. Chainlink delta: % (OK)
+  5. Régimen: TRENDING — compatible con LONG? Y
+  6. **4-Pilar Neptune SMC: 1/4**
+  7. Saturday Protocol activo? N
+  8. Veredicto: REJECT
+
+**Validation Score:** 25/100
+**Decisión:** REJECT — ADX 49 1H + ADX 43 4H con -DI dominante (trend down extremo). MR filtros 2/4 (entry +1.54% sobre Donchian Low, NO toca BB inferior). R:R TP1=0.43 / TP2=1.32 (<1.5 mínimo). Bounce con 0.13× volumen. Concurrent ETH LONG abierto. Sin SL/TP en señal original. Altcoin baja liquidez ($55M vol24h). Recomendación: pasar; esperar base real (close 1H sobre EMA9 + volumen + BOS bullish). Si visual override: HALF max $25 margin, TP1 98.12 únicamente, BE en +0.5%, no promediar.
+
+**Resultado real:**
+  - Outcome: _pendiente_
+  - Exit price: _pendiente_
+  - PnL: _pendiente_
+  - Time to outcome: _pendiente_
+
+**Aprendizaje:** _pendiente_
+
+---
