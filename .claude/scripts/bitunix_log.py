@@ -6,6 +6,11 @@ Subcommands:
   append-outcome SYMBOL OUTCOME EXIT_PRICE [--id N] [--pnl USD] : close an open entry
 
 Profile gating: only writes when WALLY_PROFILE == "bitunix". Otherwise no-op exit 0.
+
+wally_core delegation: after writing the local MD+CSV (primary), fan-out to
+wally_core.signals.log_signal / close_signal_outcome for Notion/hybrid backend
+support.  Fire-and-forget — any wally_core error is logged but never surfaces
+to the caller, preserving zero CLI-surface behavior change.
 """
 from __future__ import annotations
 
@@ -16,6 +21,12 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+# Auto-inject wally_core from worktree (no venv activation required).
+# Falls back gracefully when the shared/ tree is absent (e.g. plain-repo install).
+_SHARED = Path(__file__).resolve().parent.parent.parent / "shared/wally_core/src"
+if _SHARED.exists() and str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
 CR_OFFSET = timezone(timedelta(hours=-6))
 
@@ -246,6 +257,104 @@ def append_csv(csv_path: Path, fields: dict[str, str]) -> None:
         w.writerow({k: fields.get(k, "") for k in CSV_FIELDS})
 
 
+# ---------------------------------------------------------------------------
+# wally_core fan-out helpers (fire-and-forget; zero CLI behavior change)
+# ---------------------------------------------------------------------------
+
+def _wc_fanout_enabled() -> bool:
+    """Return True only when the user has explicitly opted into a wally_core
+    backend that does NOT also write to the same signals_received.csv on disk.
+
+    - WALLY_MEMORY_BACKEND=notion  → Notion-only, safe to fan-out
+    - WALLY_MEMORY_BACKEND=local   → writes same CSV path, skip
+    - WALLY_MEMORY_BACKEND=hybrid  → local layer writes same CSV path, skip
+    - unset (default=hybrid)       → same as hybrid, skip
+    """
+    return os.environ.get("WALLY_MEMORY_BACKEND", "") == "notion"
+
+
+def _wc_log_signal_fanout(fields: dict[str, str], signal_text: str) -> None:
+    """Delegate signal to wally_core.signals.log_signal (secondary persistence).
+
+    Constructs a wally_core.memory.Signal from the parsed fields and calls
+    log_signal so that Notion/hybrid backends also receive the entry.
+
+    Only active when WALLY_MEMORY_BACKEND=notion (see _wc_fanout_enabled).
+    Any import or runtime error is silently logged — never propagated.
+    """
+    if not _wc_fanout_enabled():
+        return
+    try:
+        from wally_core.memory.schemas import Signal, Side, SignalDecision
+        from wally_core.signals import log_signal
+
+        verdict = fields.get("verdict", "")
+        if verdict == "APPROVE_FULL":
+            decision = SignalDecision.GO
+        elif verdict == "APPROVE_HALF":
+            decision = SignalDecision.WARN
+        else:
+            decision = SignalDecision.NO_GO
+
+        ts_str = f"{fields['date']}T{fields['time']}:00-06:00"
+        tp_val = float(fields.get("tp") or 0)
+        sig = Signal(
+            ts=datetime.fromisoformat(ts_str),
+            profile="bitunix",
+            source="discord",
+            symbol=fields["symbol"],
+            side=Side(fields["side"]),
+            entry=float(fields["entry"]),
+            sl=float(fields["sl"]),
+            tp1=tp_val,
+            tp2=tp_val,
+            tp3=tp_val,
+            leverage=int(float(fields.get("leverage_signal") or 1)),
+            score=int(fields.get("validation_score") or 0),
+            decision=decision,
+            raw_message=signal_text,
+        )
+        log_signal(sig)
+    except Exception as e:
+        log_error(f"wc_log_signal_fanout failed: {e}")
+
+
+def _wc_close_signal_fanout(symbol: str, outcome_str: str,
+                            exit_price: float, pnl: float | None) -> None:
+    """Delegate outcome to wally_core.signals.close_signal_outcome.
+
+    Looks up the most recent open wally_core Signal for the symbol and closes
+    it.  Only active when WALLY_MEMORY_BACKEND=notion (see _wc_fanout_enabled).
+    Fire-and-forget — errors are logged, never propagated.
+    """
+    if not _wc_fanout_enabled():
+        return
+    try:
+        from wally_core.memory import get_backend, SignalOutcome
+
+        outcome_map = {
+            "TP1": SignalOutcome.TP1,
+            "TP2": SignalOutcome.TP2,
+            "TP3": SignalOutcome.TP3,
+            "SL": SignalOutcome.SL,
+            "manual": SignalOutcome.MANUAL,
+        }
+        wc_outcome = outcome_map.get(outcome_str, SignalOutcome.MANUAL)
+        backend = get_backend("bitunix")
+        open_sigs = list(backend.read_signals("bitunix", status=SignalOutcome.PENDING))
+        # Find the latest pending signal for this symbol
+        sym_norm = symbol.replace(".P", "").upper()
+        matches = [s for s in open_sigs if s.symbol.replace(".P", "").upper() == sym_norm]
+        if not matches:
+            return  # nothing to close in wally_core (may not have been logged there)
+        latest = matches[-1]
+        backend.update_signal_outcome(
+            latest.id, wc_outcome, exit_price, pnl if pnl is not None else 0.0
+        )
+    except Exception as e:
+        log_error(f"wc_close_signal_fanout failed: {e}")
+
+
 def cmd_append_signal(args: argparse.Namespace) -> int:
     if not is_bitunix_profile():
         return 0  # silent no-op
@@ -272,6 +381,10 @@ def cmd_append_signal(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
+
+    # Fan-out to wally_core backend (Notion/hybrid) — fire-and-forget.
+    _wc_log_signal_fanout(fields, text)
+
     print(f"bitunix_log: appended {fields['symbol']} {fields['side']} to {md_path.name}")
     return 0
 
@@ -397,6 +510,9 @@ def cmd_append_outcome(args: argparse.Namespace) -> int:
         log_error(f"append-outcome write failed: {e}")
         print(f"ERROR: append-outcome failed ({e})", file=sys.stderr)
         return 1
+
+    # Fan-out to wally_core backend (Notion/hybrid) — fire-and-forget.
+    _wc_close_signal_fanout(args.symbol, args.outcome, args.exit_price, args.pnl)
 
     # Hook for /punk-smart v2 state machine
     try:
