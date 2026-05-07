@@ -198,3 +198,33 @@ def test_clean_group_no_op_on_missing_dir(tmp_path):
     """Should not error when group dir doesn't exist."""
     transform._clean_group(tmp_path, 'nonexistent')
     # No assertion needed, just shouldn't raise.
+
+
+import json
+
+
+def test_config_includes_mcp_servers_from_system(tmp_path):
+    sys_mcp = tmp_path / "system" / "mcp"
+    sys_mcp.mkdir(parents=True)
+    (sys_mcp / "servers.json").write_text(json.dumps({
+        "servers": {
+            "tradingview": {"command": "node", "args": ["./tv.js"]},
+            "wally": {"command": "python3", "args": ["-m", "wally_trader_mcp"]},
+        }
+    }))
+    out = tmp_path / ".openclaw"
+    transform.write_config_json(sys_mcp_path=sys_mcp / "servers.json", out_dir=out, use_openrouter=False)
+    cfg = json.loads((out / "config.json").read_text())
+    assert "tradingview" in cfg["mcp"]["servers"]
+    assert "wally" in cfg["mcp"]["servers"]
+    assert cfg["agents"]["defaults"]["model"]["primary"].startswith("anthropic/")
+
+
+def test_config_uses_openrouter_when_flag(tmp_path):
+    sys_mcp = tmp_path / "system" / "mcp"
+    sys_mcp.mkdir(parents=True)
+    (sys_mcp / "servers.json").write_text(json.dumps({"servers": {}}))
+    out = tmp_path / ".openclaw"
+    transform.write_config_json(sys_mcp_path=sys_mcp / "servers.json", out_dir=out, use_openrouter=True)
+    cfg = json.loads((out / "config.json").read_text())
+    assert cfg["agents"]["defaults"]["model"]["primary"] == "openrouter/auto"

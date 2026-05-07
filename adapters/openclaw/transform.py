@@ -201,5 +201,33 @@ def main():
     print(f"✓ Symlinked {skill_passthrough_count} skills → .openclaw/skills/wally-skills (passthrough)")
 
 
+import json as _json
+
+
+def write_config_json(sys_mcp_path, out_dir, use_openrouter: bool = False):
+    """Generate .openclaw/config.json with MCP servers + model selection.
+
+    Reads system/mcp/servers.json and projects to OpenClaw's expected schema.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sys_mcp_path = Path(sys_mcp_path)
+    raw = _json.loads(sys_mcp_path.read_text()) if sys_mcp_path.exists() else {}
+    servers = raw.get('servers', {}) if isinstance(raw, dict) else {}
+    cfg = {
+        "env": {},
+        "agents": {"defaults": {"model": {"primary": ""}}},
+        "mcp": {"servers": servers},
+        "skills": {"workspace": "./.openclaw/skills"},
+    }
+    if use_openrouter:
+        cfg["env"]["OPENROUTER_API_KEY"] = "${OPENROUTER_API_KEY}"
+        cfg["agents"]["defaults"]["model"]["primary"] = "openrouter/auto"
+    else:
+        cfg["env"]["ANTHROPIC_API_KEY"] = "${ANTHROPIC_API_KEY}"
+        cfg["agents"]["defaults"]["model"]["primary"] = "anthropic/claude-opus-4-7"
+    (out_dir / "config.json").write_text(_json.dumps(cfg, indent=2))
+
+
 if __name__ == '__main__':
     main()
