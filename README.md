@@ -1,8 +1,9 @@
 # 🌭 Wally Trader — Triple-Profile Trading System
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-84%20passing-brightgreen.svg)](#)
-[![Multi-CLI](https://img.shields.io/badge/CLI-Claude%20Code%20%7C%20OpenCode-blue.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-113%20passing-brightgreen.svg)](#)
+[![Multi-CLI](https://img.shields.io/badge/harness-Claude%20Code%20%7C%20OpenClaw%20%7C%20OpenCode%20%7C%20Hermes-blue.svg)](#)
+[![Memory](https://img.shields.io/badge/memory-Local%20%7C%20Notion%20%7C%20Hybrid-purple.svg)](#)
 
 > Nombrado en honor a **Wally**, perro salchicha y CEO mascota del proyecto.
 
@@ -30,9 +31,163 @@ Un **sistema operativo de trading** dual-profile que combina:
 - **Integración con TradingView** via MCP (Claude dibuja niveles, detecta señales)
 - **Capa ML** (NLP sentiment + XGBoost supervisado) como 5° filtro opcional
 - **Watcher autónomo "set & forget"** — `/order` programa entry virtual, launchd vigila cada 1h, escala a Claude headless cuando precio está cerca, notifica macOS al dispararse trigger
-- **Multi-CLI portable** — canonical `system/` con adapters para Claude Code, OpenCode (validado), Codex (untested)
+- **Multi-CLI portable** — canonical `system/` con 5 adapters: **Claude Code** · **OpenClaw** (con OpenRouter opt-in) · **OpenCode** · **Hermes** (Telegram/Discord/Slack) · Codex (untested)
+- **Memoria unificada cross-harness/cross-device** vía Notion MCP — abrir CC en la mañana, OC en la tarde, Hermes/Telegram desde el celular, todos ven el mismo estado
 
 No es un bot automatizado. Es una **disciplina acompañada** — Claude hace el análisis pesado, el guardian aplica reglas, tú ejecutas.
+
+---
+
+## 🚀 Instalación rápida — un solo prompt por harness
+
+Pegá el prompt correspondiente en el agente que estés usando. El agente clona el repo, instala dependencias, configura el adapter y corre el smoke test. Tarda ~2-3 minutos.
+
+> **Prerequisitos comunes:** Python 3.11+, Node 22+ (para los MCPs), `git`, `make`, [`uv`](https://github.com/astral-sh/uv) (para gestión del venv). En macOS: `brew install python@3.13 node uv`.
+
+### 🤖 Claude Code
+
+```
+Por favor instalá el sistema Wally Trader siguiendo estos pasos exactos:
+
+1. Si no estamos dentro del repo, clonalo con:
+   git clone https://github.com/sasasamaes/wally-trader && cd wally-trader
+
+2. Instalá la lib compartida + el MCP server:
+   make wally-mcp-install
+
+3. Activá el adapter Claude Code (symlinks system/ → .claude/):
+   bash adapters/claude-code/install.sh
+
+4. Verificá la instalación:
+   make doctor
+
+5. Reportame:
+   - Qué checks pasaron y cuáles fallaron en doctor
+   - El path del venv Python que se creó
+   - Cualquier dependencia que falte (libomp para xgboost, etc.)
+
+Después leé CLAUDE.md para entender el sistema y avisame que estás listo para trading.
+```
+
+### 🐧 OpenClaw
+
+```
+Install the Wally Trader system. Run these exact steps:
+
+1. If not in the repo, clone:
+   git clone https://github.com/sasasamaes/wally-trader && cd wally-trader
+
+2. Install the shared library and MCP server:
+   make wally-mcp-install
+
+3. Activate the OpenClaw adapter (generates .openclaw/ skills + config):
+   bash adapters/openclaw/install.sh
+
+4. (Optional) If you want to use OpenRouter for multi-model access instead of Anthropic API:
+   WALLY_USE_OPENROUTER=1 bash adapters/openclaw/install.sh
+   And set OPENROUTER_API_KEY in your env.
+
+5. Verify the install:
+   make doctor
+
+6. Report back:
+   - All checks passed/failed
+   - Whether .openclaw/skills/wally-{agents,commands}/ has the expected count (17 + 44)
+   - Model provider in .openclaw/config.json (anthropic/* or openrouter/*)
+
+Then read docs/openclaw-setup.md for the full operational guide.
+```
+
+### 💻 OpenCode
+
+```
+Instalá el sistema Wally Trader para OpenCode:
+
+1. Cloná el repo si no lo tenés:
+   git clone https://github.com/sasasamaes/wally-trader && cd wally-trader
+
+2. Instalá la lib compartida + MCP propio:
+   make wally-mcp-install
+
+3. Activá el adapter OpenCode (genera .opencode/ y instala git pre-commit hook):
+   bash adapters/opencode/install.sh
+
+4. Verificá la instalación:
+   make doctor
+
+5. Mostrame:
+   - Qué checks pasaron en doctor
+   - Cantidad de comandos y agentes generados en .opencode/
+   - Si necesito setear alguna API key
+
+Después leé AGENTS.md (si existe) o CLAUDE.md.
+```
+
+### 🤝 Hermes (Telegram / Discord / Slack)
+
+```
+Install the Wally Trader system for Hermes (multi-channel agent runtime).
+End goal: send /punk-hunt or /chart from Telegram and have it work, including
+drawing on TradingView Desktop on this Mac.
+
+Steps:
+
+1. If not in the repo, clone:
+   git clone https://github.com/sasasamaes/wally-trader && cd wally-trader
+
+2. If Hermes is not installed yet:
+   curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
+
+3. Install the shared library + MCP server:
+   make wally-mcp-install
+
+4. Activate the Hermes adapter (regenerates .hermes/skills/ AND auto-registers
+   tradingview + wally + notion MCP servers in Hermes config):
+   make hermes-install
+
+5. Verify with smoke test (6 checks):
+   make hermes-smoke
+
+6. Report:
+   - 6/6 checks passing? Which failed?
+   - Output of: hermes config get mcp.tradingview.command
+   - Output of: hermes config get mcp.wally.command
+   - Output of: hermes config get mcp.notion.command
+
+After this, the user still needs to manually:
+- Configure Telegram bot token (BotFather → hermes config set telegram.bot_token X)
+- Set allowed_chat_ids
+- Run: make hermes-daemon-install (to keep Hermes always-on via launchd)
+
+Read docs/hermes-setup.md for the full Telegram/daemon setup guide.
+```
+
+### ⚡ Atajo bash (sin agente)
+
+Si preferís terminal directa:
+
+```bash
+git clone https://github.com/sasasamaes/wally-trader && cd wally-trader \
+  && make wally-mcp-install \
+  && bash adapters/claude-code/install.sh \
+  && bash adapters/openclaw/install.sh \
+  && bash adapters/opencode/install.sh \
+  && make hermes-install \
+  && make doctor
+```
+
+Esto deja los 4 harnesses listos. Después podés usar el que prefieras según contexto.
+
+### 🩺 Verificación post-instalación
+
+| Comando | Qué verifica |
+|---|---|
+| `make doctor` | Health check general (Python deps, MCP servers, profiles, locks) |
+| `make hermes-smoke` | 6 checks específicos de Hermes (CLI, skills, MCPs, venv) |
+| `make test-unit` | 72 tests de lógica (regime, validate, risk, locking, memory) |
+| `make test-integration` | 27 tests de las MCP tools |
+
+Los 4 deben dar verde antes de operar capital real.
 
 ---
 
