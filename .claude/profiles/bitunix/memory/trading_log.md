@@ -1,10 +1,10 @@
 # Bitunix Copy-Validated — Trading log
 
-**Account status:** PENDING (no registrado en Bitunix aún)
+**Account status:** ACTIVE
 **Provider:** [Bitunix](https://bitunix.com) — exchange crypto perpetual futures
 **Referral code:** punkchainer
-**Capital inicial:** $50.00 USD (default — ajustar al activar)
-**Fecha de registro:** TBD
+**Capital inicial:** $200.00 USD (recalibrado 2026-05-04 — capital real punkchainer's copy-validated)
+**Fecha de registro:** 2026-05-04
 
 ## Resumen rápido
 
@@ -15,7 +15,7 @@
 - Hit rate filtered: N/A
 - Hit rate all-blind: N/A
 - Outperformance vs blind copy: N/A
-- Capital actual: $50.00
+- Capital actual: $200.00
 - DD máximo: 0%
 
 ## Trades ejecutados
@@ -27,7 +27,7 @@
 
 ## Reglas vigentes
 
-- Risk per signal: 2% ($1.00 sobre $50)
+- Risk per signal: 2% ($4.00 sobre $200)
 - Max signals/día: 3
 - Min validation score: 60% (FLAG en 50-60% con half-size)
 - Max leverage: 10x (override de 20x)
