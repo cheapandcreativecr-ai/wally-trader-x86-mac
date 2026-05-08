@@ -42,7 +42,39 @@ No es un bot automatizado. Es una **disciplina acompañada** — Claude hace el 
 
 Pegá el prompt correspondiente en el agente que estés usando. El agente clona el repo, instala dependencias, configura el adapter y corre el smoke test. Tarda ~2-3 minutos.
 
-> **Prerequisitos comunes:** Python 3.11+, Node 22+ (para los MCPs), `git`, `make`, [`uv`](https://github.com/astral-sh/uv) (para gestión del venv). En macOS: `brew install python@3.13 node uv`.
+### 📋 Prerequisitos por plataforma
+
+Necesitás Python 3.11+, Node 22+, `git`, `make`, [`uv`](https://github.com/astral-sh/uv) y la librería OpenMP runtime (para xgboost del subsistema ML).
+
+| Plataforma | Comando one-liner |
+|---|---|
+| **macOS** (Apple Silicon o Intel) | `brew install python@3.13 node uv libomp` |
+| **Linux** (Debian/Ubuntu) | `sudo apt update && sudo apt install -y python3 python3-venv python3-pip nodejs npm git make libgomp1 && curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| **Windows + WSL2 Ubuntu** | Idéntico al de Linux, ejecutado dentro del shell de Ubuntu (`wsl -d Ubuntu`). Habilitá systemd en WSL si vas a usar el daemon de Hermes (ver más abajo). |
+
+Verificá versiones después de instalar:
+
+```bash
+python3 --version   # >= 3.11
+node --version      # >= 22.x
+uv --version        # cualquier reciente
+make --version
+```
+
+### ⚠️ Capacidades por plataforma
+
+| Feature | macOS | Linux nativo | WSL2 Ubuntu |
+|---|---|---|---|
+| Análisis (`/punk-hunt`, `/regime`, `/risk`, `/journal`) | ✅ | ✅ | ✅ |
+| Memory backends (Local / Notion / Hybrid) | ✅ | ✅ | ✅ |
+| MCP servers (`wally-trader-mcp`, `notion`) | ✅ | ✅ | ✅ |
+| TradingView Desktop drawing (`/chart`, `mcp__tradingview__draw_*`) | ✅ | ❌ (TV no tiene cliente Linux nativo) | ⚠️ Requiere TV Desktop en Windows host + tunneling al MCP — no out-of-the-box |
+| Hermes daemon siempre-on (`make hermes-daemon-install`) | ✅ launchd nativo | ⚠️ Necesita unit systemd manual (ver abajo) | ⚠️ Idem + systemd habilitado en WSL2 |
+| Watcher launchd (`watcher/install_agent.sh`) | ✅ | ❌ — usar systemd timer o cron | ❌ Idem |
+
+**Conclusión práctica:**
+- **macOS**: experiencia completa (incluyendo Telegram → TV remoto via Hermes daemon).
+- **Linux/WSL**: análisis y memoria 100% funcionales; lo que falla son los componentes que dibujan en TV Desktop o usan launchd. Para drawing, mantener una Mac dedicada al MCP server de TV o ejecutar TV en Windows host con WSL2 forwarding.
 
 ### 🤖 Claude Code
 
@@ -157,7 +189,7 @@ Steps:
 After this, the user still needs to manually:
 - Configure Telegram bot token (BotFather → hermes config set telegram.bot_token X)
 - Set allowed_chat_ids
-- Run: make hermes-daemon-install (to keep Hermes always-on via launchd)
+- Always-on daemon (depends on platform — see below)
 
 Read docs/hermes-setup.md for the full Telegram/daemon setup guide.
 ```
@@ -322,6 +354,57 @@ hermes skills list      # debe mostrar 85 local skills
 ```
 
 En Telegram, envía `/reset` y luego `/morning` para probar.
+#### 🔁 Daemon siempre-on por plataforma
+
+Para que Hermes responda mensajes de Telegram cuando vos no estás frente al equipo, necesita correr como servicio.
+
+**macOS (launchd)** — provisto out-of-the-box:
+
+```bash
+make hermes-daemon-install   # carga ~/Library/LaunchAgents/com.wally.hermes-daemon.plist
+launchctl list | grep hermes # verifica que arrancó
+```
+
+**Linux nativo / WSL2 con systemd** — crear unit manualmente:
+
+```bash
+mkdir -p ~/.config/systemd/user
+cat > ~/.config/systemd/user/wally-hermes.service <<'EOF'
+[Unit]
+Description=Wally Trader - Hermes Daemon
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/wally-trader
+ExecStart=/usr/local/bin/hermes serve
+Restart=always
+RestartSec=10
+StandardOutput=append:%h/wally-trader/logs/hermes-daemon.log
+StandardError=append:%h/wally-trader/logs/hermes-daemon.log
+
+[Install]
+WantedBy=default.target
+EOF
+
+mkdir -p ~/wally-trader/logs
+systemctl --user daemon-reload
+systemctl --user enable --now wally-hermes
+systemctl --user status wally-hermes
+```
+
+(Ajustá `WorkingDirectory` y `ExecStart` al path real de tu repo y de tu binario `hermes`.)
+
+**WSL2** requiere systemd habilitado. Si `systemctl --user` no funciona, agregá esto a `/etc/wsl.conf`:
+
+```ini
+[boot]
+systemd=true
+```
+
+Y reiniciá WSL: `wsl --shutdown` desde PowerShell, después abrí Ubuntu de nuevo. Ver [docs Microsoft](https://learn.microsoft.com/en-us/windows/wsl/systemd) para detalles.
+
+**Windows nativo (sin WSL)** — no soportado actualmente. Todo el sistema asume bash + Unix paths. Usá WSL2 Ubuntu.
 
 ### ⚡ Atajo bash (sin agente)
 
