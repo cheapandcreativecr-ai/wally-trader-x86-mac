@@ -82,6 +82,31 @@ def load_bars(source: str | None) -> list[dict]:
     return payload
 
 
+def adx(bars: list[dict], length: int = 14) -> dict:
+    """Public API: compute ADX for a list of bars.
+
+    Returns dict with last_adx / last_plus_di / last_minus_di / regime / bars_used,
+    or {"error": "<reason>"} if data is insufficient.
+    """
+    min_bars = length * 2 + 1
+    if len(bars) < min_bars:
+        return {"error": f"need at least {min_bars} bars, got {len(bars)}"}
+    normalized = [_normalize_bar(b) for b in bars]
+    try:
+        res = compute_adx(normalized, length=length)
+    except Exception as e:
+        return {"error": str(e)}
+    regime, strat = label_regime(res["adx"], res["plus_di"], res["minus_di"])
+    return {
+        "last_adx": res["adx"],
+        "last_plus_di": res["plus_di"],
+        "last_minus_di": res["minus_di"],
+        "regime": regime,
+        "strategy_hint": strat,
+        "bars_used": len(bars),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", default=None, help="JSON file with bars (default: stdin)")

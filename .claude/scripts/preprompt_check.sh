@@ -9,7 +9,7 @@ TEST_FILE="$SCRIPTS_DIR/test_pdf_helpers.py"
 TEST_STAMP="/tmp/.wally_helpers_last_check"
 # Solo correr una vez por hora (no en cada prompt)
 if [[ -f "$TEST_FILE" ]]; then
-    last=$(stat -f %m "$TEST_STAMP" 2>/dev/null || echo 0)
+    last=$(stat -c %Y "$TEST_STAMP" 2>/dev/null || stat -f %m "$TEST_STAMP" 2>/dev/null || echo 0)
     now=$(date +%s)
     if (( now - last > 3600 )); then
         if ! python3 "$TEST_FILE" >/tmp/wally_helpers_test.log 2>&1; then
