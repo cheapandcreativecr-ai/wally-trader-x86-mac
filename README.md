@@ -127,8 +127,8 @@ Después leé AGENTS.md (si existe) o CLAUDE.md.
 
 ```
 Install the Wally Trader system for Hermes (multi-channel agent runtime).
-End goal: send /punk-hunt or /chart from Telegram and have it work, including
-drawing on TradingView Desktop on this Mac.
+End goal: send /morning or /chart from Telegram and have it work, including
+drawing on TradingView Desktop.
 
 Steps:
 
@@ -161,6 +161,167 @@ After this, the user still needs to manually:
 
 Read docs/hermes-setup.md for the full Telegram/daemon setup guide.
 ```
+
+#### Instalación manual en WSL Ubuntu (pasos reales verificados)
+
+Si el `Makefile` no aplica (ej: WSL sin launchd, sin Mac), estos son los pasos manuales que funcionan:
+
+**1. Clonar el repo en WSL:**
+```bash
+git clone https://github.com/sasasamaes/wally-trader ~/wally-trader
+cd ~/wally-trader
+```
+
+**2. Instalar Hermes CLI:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
+# Hermes queda en ~/.local/bin/hermes
+```
+
+**3. Registrar las skills de wally-trader en Hermes:**
+```bash
+hermes config set skills.external_dirs '["/home/$USER/wally-trader/.hermes/skills"]'
+```
+Esto carga los ~85 skills del proyecto (wally-agents, wally-commands, wally-skills).  
+Verificar con: `hermes skills list | grep wally`
+
+**4. Apuntar el directorio de trabajo al proyecto:**
+
+Editar `~/.hermes/config.yaml` y cambiar la sección `terminal:`:
+```yaml
+terminal:
+  cwd: /home/<tu-usuario>/wally-trader
+```
+Esto hace que `AGENTS.md` se cargue automáticamente y todos los scripts Python tengan el path correcto.
+
+**5. Configurar el modelo LLM:**
+
+Hermes requiere mínimo 64K de contexto. Opciones:
+
+**Opción A — Ollama local + Anthropic (configuración real verificada en WSL):**
+
+```bash
+# Instalar Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Descargar hermes3 (131K contexto, diseñado para tool-calling)
+ollama pull hermes3
+```
+
+Agregar en `~/.hermes/.env`:
+```bash
+ANTHROPIC_API_KEY=sk-ant-api03-...   # console.anthropic.com → API Keys
+OPENROUTER_API_KEY=sk-or-...         # openrouter.ai (opcional, para fallbacks gratuitos)
+```
+
+En `~/.hermes/config.yaml`:
+```yaml
+model:
+  default: hermes3:latest
+  provider: ollama
+  base_url: http://localhost:11434/v1
+  api_mode: chat_completions
+  context_length: 131072
+fallback_providers:
+  - provider: anthropic
+    model: claude-haiku-4-5-20251001        # barato, rápido — fallback principal
+  - provider: openrouter
+    model: qwen/qwen3-next-80b-a3b-instruct:free
+    base_url: https://openrouter.ai/api/v1
+  - provider: openrouter
+    model: nvidia/nemotron-3-super-120b-a12b:free
+    base_url: https://openrouter.ai/api/v1
+```
+
+Estrategia de costos:
+- **Ollama** corre local, sin costo ni rate-limit — modelo principal para todo
+- **Claude Haiku** entra solo si Ollama falla — ~$0.001/1K tokens
+- **OpenRouter free** como último recurso (puede tener rate-limit en horas pico)
+- Para análisis complejos puntuales: `/model claude-sonnet-4-6` en Telegram, volver con `/model hermes3:latest`
+
+**Opción B — Solo OpenRouter gratuito (sin Anthropic ni Ollama):**
+
+Agrega `OPENROUTER_API_KEY=sk-or-...` en `~/.hermes/.env`. Modelos con 64K+ contexto que funcionan:
+- `qwen/qwen3-next-80b-a3b-instruct:free` (262K ctx)
+- `nvidia/nemotron-3-super-120b-a12b:free` (262K ctx)
+- `google/gemma-4-31b-it:free` (262K ctx)
+
+> Los modelos gratuitos de OpenRouter tienen rate-limit frecuente en horas pico. Sin Ollama local como fallback, el `/morning` puede fallar. Se recomienda Opción A.
+
+**6. Configurar proveedores auxiliares (compresión, títulos de sesión):**
+
+Con Anthropic disponible, usar Haiku para tareas auxiliares (mejor calidad que Ollama local, costo mínimo):
+
+```yaml
+auxiliary:
+  compression:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    base_url: ''
+    api_key: ''
+    timeout: 120
+  title_generation:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    base_url: ''
+    api_key: ''
+    timeout: 30
+  session_search:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    base_url: ''
+    api_key: ''
+    timeout: 30
+  vision:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    base_url: ''
+    api_key: ''
+    timeout: 120
+  web_extract:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    base_url: ''
+    api_key: ''
+    timeout: 360
+  skills_hub:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    base_url: ''
+    api_key: ''
+    timeout: 30
+  approval:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    base_url: ''
+    api_key: ''
+    timeout: 30
+  mcp:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    base_url: ''
+    api_key: ''
+    timeout: 30
+```
+
+Sin API key de Anthropic, usar Ollama para todos los auxiliares (ver sección anterior).
+
+**7. Configurar el bot de Telegram:**
+```bash
+# Obtener token de @BotFather en Telegram
+hermes config set telegram.bot_token "TU_TOKEN_AQUI"
+
+# Iniciar gateway
+hermes gateway start
+```
+
+**8. Verificar:**
+```bash
+hermes status           # gateway running + telegram configured
+hermes skills list      # debe mostrar 85 local skills
+```
+
+En Telegram, envía `/reset` y luego `/morning` para probar.
 
 ### ⚡ Atajo bash (sin agente)
 
