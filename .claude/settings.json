@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "statusLine": {
     "type": "command",
-    "command": "~/Documents/wally-trader/.claude/scripts/statusline.sh",
+    "command": "~/wally-trader/.claude/scripts/statusline.sh",
     "refreshInterval": 30
   },
   "hooks": {
@@ -11,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/Documents/wally-trader/.claude/scripts/session_start.sh",
+            "command": "~/wally-trader/.claude/scripts/session_start.sh",
             "timeout": 10
           }
         ]
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/Documents/wally-trader/.claude/scripts/stop_hook.sh",
+            "command": "~/wally-trader/.claude/scripts/stop_hook.sh",
             "timeout": 15
           }
         ]
@@ -33,7 +33,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/Documents/wally-trader/.claude/scripts/preprompt_check.sh",
+            "command": "~/wally-trader/.claude/scripts/preprompt_check.sh",
             "timeout": 5
           }
         ]
@@ -56,13 +56,15 @@
       "Bash(chmod:*)",
       "Bash(mkdir:*)",
       "Bash(ls:*)",
-      "Bash(~/Documents/wally-trader/.claude/scripts/*)",
-      "Bash(osascript:*)",
+      "Bash(~/wally-trader/.claude/scripts/*)",
       "Bash(jq:*)",
       "Bash(cat /tmp/*)",
       "Bash(cat ~/.claude/*)",
       "Bash(date:*)",
       "Bash(sleep:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
       "mcp__tradingview__tv_health_check",
       "mcp__tradingview__tv_launch",
       "mcp__tradingview__quote_get",
