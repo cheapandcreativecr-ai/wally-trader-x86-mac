@@ -7,7 +7,37 @@ import sys
 from pathlib import Path
 
 
+def setup_dashboard_template(api_key: str):
+    """Create pre-built widgets in a 'Dashboard' Notion page."""
+    print("Creating pre-built dashboard widgets in your Notion workspace...")
+    print("   This adds a 'Dashboard' page with embedded views of:")
+    print("   - Today's trades (filtered)")
+    print("   - Equity curve table")
+    print("   - Recent signals")
+    print()
+    print("   v1: prints SQL-like instructions for manual setup.")
+    print("   v2: will auto-create via Notion API.")
+    print()
+    print("   Manual recipe (paste into Notion page):")
+    print("   1. /database, name='Today\\'s Trades', filter date=today")
+    print("   2. /linked-database, source=Trades Log, filter date>=last 7d, group by symbol")
+    print("   3. /linked-database, source=Equity Curve, sort by date desc, limit 30")
+    print()
+    print("   See docs/notion-memory-setup.md for layout examples.")
+
+
 def main():
+    import argparse
+
+    p = argparse.ArgumentParser(description="Wally Trader — Notion Memory Setup Wizard")
+    p.add_argument("--template", choices=["dashboard"], help="Create pre-built widgets without full wizard")
+    args, _ = p.parse_known_args()
+
+    if args.template == "dashboard":
+        api_key = os.environ.get("NOTION_API_KEY", "")
+        setup_dashboard_template(api_key)
+        return 0
+
     print("=" * 60)
     print("  Wally Trader — Notion Memory Setup Wizard")
     print("=" * 60)

@@ -2,21 +2,52 @@
 
 Provides JSON endpoints + serves single-page HTML dashboard.
 Loopback-only by default (no auth needed, never expose to network).
+Mobile /api/v1/mobile/* endpoints require X-Api-Key header.
 """
 from __future__ import annotations
 import csv
 import json
 import os
+import secrets
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 
 app = FastAPI(title="Wally Trader Dashboard", version="0.1.0")
+
+
+# Mobile auth helpers ----------------------------------------
+
+def _mobile_token_path() -> Path:
+    return Path.home() / ".wally" / "mobile_token"
+
+
+def _ensure_mobile_token() -> str:
+    """Read or generate mobile API key."""
+    p = _mobile_token_path()
+    if p.exists():
+        return p.read_text().strip()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    token = secrets.token_urlsafe(32)
+    p.write_text(token)
+    p.chmod(0o600)
+    return token
+
+
+@app.middleware("http")
+async def mobile_auth_middleware(request: Request, call_next):
+    """Require X-Api-Key header on /api/v1/mobile/* endpoints."""
+    if request.url.path.startswith("/api/v1/mobile/"):
+        provided = request.headers.get("X-Api-Key", "")
+        expected = _ensure_mobile_token()
+        if provided != expected:
+            return JSONResponse(status_code=401, content={"error": "invalid_api_key"})
+    return await call_next(request)
 
 
 # Helpers ----------------------------------------------------
@@ -280,6 +311,49 @@ def api_positions_all():
                 "ts": s.get("_ts_iso"),
             })
     return {"positions": rows, "count": len(rows)}
+
+
+# Mobile endpoints -------------------------------------------
+
+@app.get("/api/v1/mobile/dashboard")
+def api_mobile_dashboard():
+    """Aggregated mobile-friendly dashboard view."""
+    profiles = []
+    for name in _list_profiles():
+        signals = _read_signals_csv(name, since_days=1)
+        pending = [s for s in signals if not s.get("outcome") or s.get("outcome") == "pending"]
+        profiles.append({"name": name, "open": len(pending), "today_signals": len(signals)})
+
+    return {
+        "profiles": profiles,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/api/v1/mobile/positions")
+def api_mobile_positions():
+    """Mobile-friendly positions view."""
+    return api_positions_all()
+
+
+# PWA static files -------------------------------------------
+
+@app.get("/manifest.json")
+def manifest():
+    here = Path(__file__).parent
+    p = here / "dashboard" / "manifest.json"
+    if p.exists():
+        return FileResponse(p, media_type="application/manifest+json")
+    raise HTTPException(404)
+
+
+@app.get("/sw.js")
+def service_worker():
+    here = Path(__file__).parent
+    p = here / "dashboard" / "sw.js"
+    if p.exists():
+        return FileResponse(p, media_type="application/javascript")
+    raise HTTPException(404)
 
 
 # Serve dashboard static --------------------------------------

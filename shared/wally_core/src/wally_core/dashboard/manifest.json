@@ -1,0 +1,17 @@
+{
+    "name": "Wally Trader Dashboard",
+    "short_name": "Wally",
+    "description": "Personal trading system dashboard",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0e1117",
+    "theme_color": "#58a6ff",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 100 100%22%3E%3Ctext y%3D%2280%22 font-size%3D%2280%22%3E%F0%9F%8C%AD%3C%2Ftext%3E%3C%2Fsvg%3E",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
+}
