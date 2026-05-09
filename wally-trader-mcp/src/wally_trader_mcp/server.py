@@ -20,6 +20,7 @@ from .tools.tilt_check import tilt_check_tool as _tilt_check
 from .tools.divergence import divergence_check_tool as _divergence_check
 from .tools.correlation_report import correlation_report as _correlation_report
 from .tools.ops_health import ops_health_tool as _ops_health
+from .tools.margin_sim import margin_sim as _margin_sim
 
 mcp = FastMCP("wally-trader")
 
@@ -201,6 +202,12 @@ def correlation_report(symbols_csv: str, lookback_days: int = 30) -> dict:
 def ops_health(dashboard_port: int = 8080) -> dict:
     """System health (dashboard, MCPs, disk, creds, drift)."""
     return _ops_health(dashboard_port)
+
+
+@mcp.tool()
+def margin_sim(entry: float, leverage: int, side: str, maintenance_margin_pct: float = 0.5) -> dict:
+    """Margin call simulator — liq price + MFE/MAE table."""
+    return _margin_sim(entry, leverage, side, maintenance_margin_pct)
 
 
 def main():

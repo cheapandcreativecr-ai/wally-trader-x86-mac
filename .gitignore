@@ -86,3 +86,8 @@ scripts/ml_system/**/*.parquet
 .claude/profiles/retail/memory/trading_log.md
 .claude/memory/trading_log.md
 .claude/scripts/.venv/
+
+# Sensitive — tax reports + audit chain
+.claude/profiles/*/memory/tax_*.csv
+.claude/profiles/_audit/
+~/.wally/
