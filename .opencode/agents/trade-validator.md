@@ -43,8 +43,22 @@ python3 .claude/scripts/macro_gate.py --check-now
 Decisión:
 - Si `blocked: true` → respuesta inmediata `NO-GO: macro event window — <reason>`. NO seguir con los filtros.
 - Si `stale: true` y `blocked: false` → continuar pero agregar warning al output: `⚠️ macro cache stale (>24h) — refresh con bash .claude/scripts/macro_calendar.py`.
-- Si `blocked: false` y `stale: false` → continuar con FASE 1.
+- Si `blocked: false` y `stale: false` → continuar con FASE 0.5.
 - Si script falla (exit code != 0) → continuar pero loggear warning. No bloquear por fallo de feed.
+
+## FASE 0.5 — Session quality gate (VWAP-flat / Asia chop)
+
+Detector micro-estructural: si el chart está plano (VWAP std-dev < 0.10% AND últimas 8 velas con range < 0.50%), el setup es propenso a falsos positivos y SL chop. Lección directa de price action: "Asia some nights completely flat — I know better than to trade that."
+
+```bash
+python3 .claude/scripts/session_quality.py --symbol <SYMBOL> --quick
+```
+
+Decisión por exit code:
+- `0` (OK) → continuar a FASE 1.
+- `2` (WARN) → continuar pero **reducir size 50%** y agregar nota al output: `⚠️ Session low-quality: <reason>. Size reducido al 1% capital`.
+- `1` (BLOCK) → respuesta inmediata `NO-GO: session dead (VWAP-flat + range compressed). Wait for breakout candle.` NO seguir con filtros.
+- Cualquier otro exit (ERROR fetching klines) → continuar pero loggear warning. No bloquear por fallo de feed.
 
 ## Protocolo
 

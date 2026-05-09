@@ -50,8 +50,24 @@ python3 .claude/scripts/macro_gate.py --check-now
 Decisión:
 - Si `blocked: true` → respuesta inmediata `NO-GO: macro event window — <reason>`. NO seguir con los filtros.
 - Si `stale: true` y `blocked: false` → continuar pero agregar warning al output: `⚠️ macro cache stale (>24h) — refresh con bash .claude/scripts/macro_calendar.py`.
-- Si `blocked: false` y `stale: false` → continuar con FASE 1.
+- Si `blocked: false` y `stale: false` → continuar con FASE 0.5.
 - Si script falla (exit code != 0) → continuar pero loggear warning. No bloquear por fallo de feed.
+
+## FASE 0.5 — Session quality gate (VWAP-flat / Asia chop)
+
+Detecta sesiones planas que generan falsos positivos y SL chop:
+
+```bash
+python3 .claude/scripts/session_quality.py --symbol <SYMBOL_DE_LA_SEÑAL> --quick
+```
+
+Decisión por exit code:
+- `0` (OK) → continuar a FASE 1.
+- `2` (WARN) → reducir score de confluencia en 10 puntos (max final 80%) y agregar nota: `⚠️ Session low-quality — size reducido 50%`.
+- `1` (BLOCK) → respuesta inmediata `NO-GO: dead session (VWAP-flat + compressed range). Esperar breakout candle.` NO seguir con filtros.
+- Otros (ERROR) → continuar pero loggear warning.
+
+**Excepción bitunix:** profile bitunix puede operar señales comunidad incluso con WARN si el setup tiene multifactor>+50 (override visual válido), pero NUNCA con BLOCK.
 
 ## 🔍 Parsing de la señal
 

@@ -432,6 +432,22 @@ Three new automated systems added in branch `feat/discipline-observability`:
 - DST-aware: usa `zoneinfo.ZoneInfo("America/New_York")` para conversión EST/EDT → CR correcta año redondo
 - Activar launchd: `cp .claude/launchd/com.wally.macro-calendar.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/com.wally.macro-calendar.plist`
 
+### Session quality gate (FASE 0.5) — VWAP-flat detector (2026-05-09)
+- CLI: `python3 .claude/scripts/session_quality.py --symbol <SYM> --quick`
+- Detecta micro-estructura plana ANTES de los 4 filtros: VWAP std-dev < 0.10% AND últimas 8 velas con range < 0.50% → BLOCK ("dead session")
+- Solo flat XOR compressed → WARN (reducir size 50%)
+- Wire-in: `trade-validator` (FASE 0.5 después de macro_gate) y `signal-validator` (mismo, con excepción bitunix override visual)
+- Ratio: lección directa del video YouTube "How to Connect Claude to TradingView" — "Asia some nights completely flat. I lost two trades. I know better than to trade that."
+- Tests: `shared/wally_core/tests/test_session_quality.py` (12/12 green)
+- Exit codes: 0=OK 1=BLOCK 2=WARN otros=ERROR (no block)
+
+### `/pine-gen` — Pine v6 generator desde NL (2026-05-09)
+- Slash command: `/pine-gen <descripción>` genera indicador Pine Script v6 desde lenguaje natural
+- Workflow: NL description → Claude genera código Pine v6 → guarda en `system/pine_library/<slug>.pine` → compila vía MCP (`pine_set_source` + `pine_smart_compile`) → reporta clean/errors corregidos (max 3 retry cycles)
+- Reglas estrictas: `//@version=6`, `indicator()` declaration, inputs visibles, no funciones deprecated v4/v5, alertas con `alert()`/`alertcondition()`
+- Disclaimer: tratar output como **draft** que necesita 1 revisión visual + 1 backtest antes de confiar
+- Para strategies con backtester usa `strategy()` en vez de `indicator()` (preguntar al user si ambiguo)
+
 ### Bitunix signal log capture (#3)
 - Auto-log: cada `/signal` ejecutado con `WALLY_PROFILE=bitunix` appendea su reporte a `signals_received.md` y `.csv`
 - Cierre manual: `/log-outcome SYMBOL TP1|TP2|TP3|SL|manual EXIT_PRICE [--id N] [--pnl USD]`
