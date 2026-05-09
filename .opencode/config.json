@@ -8,7 +8,16 @@
           "./tradingview-mcp/src/server.js"
         ],
         "env": {},
-        "enabled": true
+        "enabled": true,
+        "platform_overrides": {
+          "wsl": {
+            "$comment": "On WSL Ubuntu, TV Desktop runs on Windows native. wsl_tv_bridge.sh exec's node.exe against the Windows-side clone via /mnt/c/. Requires TV_MCP_WIN_REPO env in $REPO/.env (e.g. C:\\Users\\jose\\wally-trader).",
+            "command": "bash",
+            "args": [
+              "adapters/hermes/wsl_tv_bridge.sh"
+            ]
+          }
+        }
       },
       "wally": {
         "type": "stdio",

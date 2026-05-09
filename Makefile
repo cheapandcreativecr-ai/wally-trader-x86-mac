@@ -1,4 +1,4 @@
-.PHONY: doctor wally-mcp-install sync-oc sync-all notion-init notion-migrate notion-rollback sync-pull test-unit test-integration test-parity test help hermes-install hermes-smoke hermes-daemon-install hermes-daemon-uninstall hermes-status
+.PHONY: doctor wally-mcp-install sync-oc sync-all notion-init notion-migrate notion-rollback sync-pull test-unit test-integration test-parity test help hermes-install hermes-smoke hermes-daemon-install hermes-daemon-uninstall hermes-status hermes-restart hermes-logs hermes-telegram-setup hermes-systemd-install hermes-systemd-uninstall hermes-doctor
 
 VENV_PY := shared/wally_core/.venv/bin/python
 VENV_PIP := uv pip install --python $(VENV_PY)
@@ -21,12 +21,8 @@ sync-all:  ## Run install.sh for all adapters
 		echo "=== $$a ==="; bash adapters/$$a/install.sh 2>&1 | tail -3; \
 	done
 
-notion-init:  ## Interactive setup for Notion (prompts for API key)
-	@echo "1. Visit https://www.notion.so/my-integrations and create a new integration."
-	@echo "2. Copy the API key (starts with 'secret_')."
-	@echo "3. Add it to your shell:"
-	@echo "     export NOTION_API_KEY=secret_xxx"
-	@echo "4. Then run: make notion-migrate PROFILE=<your-profile> DRY_RUN=0"
+notion-init:  ## Interactive setup wizard for Notion memory backend
+	python3 .claude/scripts/notion_init.py
 
 notion-migrate:  ## Migrate local CSV → Notion (PROFILE=name DRY_RUN=0|1)
 	@if [ -z "$(PROFILE)" ]; then echo "Usage: make notion-migrate PROFILE=<name> [DRY_RUN=0]"; exit 1; fi
@@ -80,8 +76,50 @@ hermes-daemon-uninstall:  ## Unload the Hermes daemon launchd plist
 	rm -f ~/Library/LaunchAgents/com.wally.hermes-daemon.plist
 	@echo "✓ Hermes daemon unloaded"
 
-hermes-status:  ## Show Hermes daemon + MCP status
-	@echo "=== launchd ==="
-	@launchctl list | grep hermes || echo "  daemon not loaded"
+hermes-status:  ## Show Hermes daemon + MCP status (cross-platform)
+	@echo "=== Daemon ==="
+	@if command -v launchctl >/dev/null 2>&1; then \
+	  launchctl list | grep hermes || echo "  launchd: daemon not loaded"; \
+	fi
+	@if command -v systemctl >/dev/null 2>&1; then \
+	  systemctl --user status hermes --no-pager -l 2>/dev/null | head -5 || echo "  systemd: unit not installed"; \
+	fi
 	@echo "=== MCPs ==="
 	@command -v hermes >/dev/null 2>&1 && hermes config get mcp.tradingview.command 2>/dev/null || echo "  hermes not on PATH"
+
+hermes-restart:  ## Restart the Hermes daemon (auto-detects launchd vs systemd)
+	@if command -v launchctl >/dev/null 2>&1 && launchctl list | grep -q com.wally.hermes-daemon; then \
+	  echo "→ launchctl kickstart"; \
+	  launchctl kickstart -k gui/$$(id -u)/com.wally.hermes-daemon; \
+	elif command -v systemctl >/dev/null 2>&1; then \
+	  echo "→ systemctl --user restart hermes"; \
+	  systemctl --user restart hermes; \
+	else \
+	  echo "❌ neither launchctl nor systemctl --user available"; exit 1; \
+	fi
+
+hermes-logs:  ## Tail the Hermes daemon log
+	@mkdir -p logs
+	@touch logs/hermes-daemon.log
+	@tail -f logs/hermes-daemon.log
+
+hermes-telegram-setup:  ## Interactive Telegram bot bootstrap (token + chat_id)
+	bash adapters/hermes/telegram_setup.sh
+
+hermes-systemd-install:  ## Install Hermes as systemd-user service (Linux/WSL)
+	@command -v systemctl >/dev/null 2>&1 || { echo "❌ systemctl not available — this target is for Linux/WSL only"; exit 1; }
+	mkdir -p logs ~/.config/systemd/user
+	cp .claude/systemd/hermes.service ~/.config/systemd/user/
+	systemctl --user daemon-reload
+	systemctl --user enable --now hermes.service
+	@echo "✓ hermes.service enabled. Status: systemctl --user status hermes"
+	@echo "  To survive logout: loginctl enable-linger $$USER"
+
+hermes-systemd-uninstall:  ## Remove Hermes systemd-user service
+	-systemctl --user disable --now hermes.service 2>/dev/null || true
+	rm -f ~/.config/systemd/user/hermes.service
+	-systemctl --user daemon-reload 2>/dev/null || true
+	@echo "✓ hermes.service removed"
+
+hermes-doctor:  ## Extended smoke test (calls hermes-smoke + WSL/Linux specific checks)
+	bash scripts/hermes_smoke.sh

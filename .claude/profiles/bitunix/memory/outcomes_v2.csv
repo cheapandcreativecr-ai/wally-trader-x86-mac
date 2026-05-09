@@ -1,0 +1,2 @@
+open_time_utc,close_time_utc,hold_minutes,profile,symbol,side,entry,exit,qty,pnl_usd,pnl_pct,regime_at_entry,regime_at_exit,max_favorable_excursion,max_adverse_excursion,raw_outcome,lesson_tags,notes
+2026-05-08T03:17:00Z,2026-05-08T04:20:00Z,63,bitunix,DYDXUSDT,SHORT,0.2018,0.1888,4839.0,62.91,6.44,TREND_EXTREMO,TREND_LEVE,0.005,-0.002,TP,WIN|intraday|fade_the_pump_WIN|regime_changed:TREND_EXTREMO>TREND_LEVE,fade-the-pump runner

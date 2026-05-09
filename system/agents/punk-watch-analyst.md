@@ -201,6 +201,30 @@ Output final structured:
 - Acciones concretas a hacer en Bitunix UI (si aplica)
 ```
 
+## Cushion-aware decision check (mandatory step)
+
+Antes de recomendar HOLD vs CUT, ejecutá:
+
+```bash
+python3 .claude/scripts/cushion_aware.py \
+  --day-realized $DAY_REALIZED \
+  --position-pnl $POSITION_PNL \
+  --liq-distance-pct $LIQ_DIST \
+  --funding-daily $FUNDING_DAILY \
+  --capital $CAPITAL \
+  --json
+```
+
+Si decision = HOLD_FAVORED → tu recomendación debe defaultear a aguantar
+con SLs hard, NO cortar prematuramente (excepto si invalidation técnica clara).
+
+Si decision = CUT_FAVORED → recomendá cierre inmediato + razones.
+
+Si EVALUATE_NORMALLY → procedé con análisis estándar.
+
+Esto previene la tendencia previa a recomendar cuts prematuros cuando
+el cushion del día absorbe la pérdida y el liq está lejos.
+
 ## Reglas duras
 
 - NUNCA modifica el trade automáticamente — solo sugiere
