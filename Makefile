@@ -139,3 +139,31 @@ dashboard-install:  ## Install dashboard deps + load launchd plist
 dashboard-uninstall:  ## Stop + unload dashboard daemon
 	launchctl unload ~/Library/LaunchAgents/com.wally.dashboard.plist || true
 	rm -f ~/Library/LaunchAgents/com.wally.dashboard.plist
+
+# ── Reliability ops daemons ───────────────────────────────────────────────────
+
+health:  ## Run health check once
+	$(VENV_PY) .claude/scripts/health_daemon.py --once
+
+backup:  ## Run daily backup manually
+	python3 .claude/scripts/backup_daily.py
+
+ops-install:  ## Install all 3 ops daemons (health, backup, mcp-watchdog)
+	mkdir -p logs
+	cp .claude/launchd/com.wally.health-daemon.plist ~/Library/LaunchAgents/
+	cp .claude/launchd/com.wally.backup-daily.plist ~/Library/LaunchAgents/
+	cp .claude/launchd/com.wally.mcp-watchdog.plist ~/Library/LaunchAgents/
+	launchctl load ~/Library/LaunchAgents/com.wally.health-daemon.plist || true
+	launchctl load ~/Library/LaunchAgents/com.wally.backup-daily.plist || true
+	launchctl load ~/Library/LaunchAgents/com.wally.mcp-watchdog.plist || true
+	@echo "Ops daemons loaded -- verify: launchctl list | grep wally"
+
+ops-uninstall:  ## Unload and remove all 3 ops daemons
+	launchctl unload ~/Library/LaunchAgents/com.wally.health-daemon.plist || true
+	launchctl unload ~/Library/LaunchAgents/com.wally.backup-daily.plist || true
+	launchctl unload ~/Library/LaunchAgents/com.wally.mcp-watchdog.plist || true
+	rm -f ~/Library/LaunchAgents/com.wally.health-daemon.plist
+	rm -f ~/Library/LaunchAgents/com.wally.backup-daily.plist
+	rm -f ~/Library/LaunchAgents/com.wally.mcp-watchdog.plist
+
+.PHONY: health backup ops-install ops-uninstall

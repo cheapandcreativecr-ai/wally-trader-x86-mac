@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.wally.health-daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/josecampos/Documents/wally-trader/shared/wally_core/.venv/bin/python</string>
+        <string>/Users/josecampos/Documents/wally-trader/.claude/scripts/health_daemon.py</string>
+        <string>--interval</string>
+        <string>60</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/josecampos/Documents/wally-trader/logs/health-daemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/josecampos/Documents/wally-trader/logs/health-daemon.log</string>
+    <key>WorkingDirectory</key>
+    <string>/Users/josecampos/Documents/wally-trader</string>
+</dict>
+</plist>

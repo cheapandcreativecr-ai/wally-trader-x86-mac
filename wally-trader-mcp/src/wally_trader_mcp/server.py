@@ -19,6 +19,7 @@ from .tools.auto_sl_tp import auto_sl_tp as _auto_sl_tp
 from .tools.tilt_check import tilt_check_tool as _tilt_check
 from .tools.divergence import divergence_check_tool as _divergence_check
 from .tools.correlation_report import correlation_report as _correlation_report
+from .tools.ops_health import ops_health_tool as _ops_health
 
 mcp = FastMCP("wally-trader")
 
@@ -194,6 +195,12 @@ def divergence_check(profile: str, window_days: int = 30) -> dict:
 def correlation_report(symbols_csv: str, lookback_days: int = 30) -> dict:
     """Pairwise correlation matrix (last N days returns)."""
     return _correlation_report(symbols_csv, lookback_days)
+
+
+@mcp.tool()
+def ops_health(dashboard_port: int = 8080) -> dict:
+    """System health (dashboard, MCPs, disk, creds, drift)."""
+    return _ops_health(dashboard_port)
 
 
 def main():
