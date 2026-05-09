@@ -8,6 +8,75 @@ Formato: [Keep a Changelog](https://keepachangelog.com/) + [SemVer](https://semv
 
 ⚠️ **Strategy/risk changes son MAJOR** porque pueden afectar capital real.
 
+## v2.0 — 2026-05-08
+
+### Phase 1: Trade entry safety net (`4b70950`)
+- `portfolio.py`: heat tracking + correlation guard + breach detection
+- `atr_sl.py`: volatility-adjusted SL with regime-aware multipliers
+- `risk.auto_levels()`: combined SL/TP/leverage cap helper
+- 2 new MCP tools: `portfolio_heat`, `auto_sl_tp`
+
+### Phase 2: Discipline & tilt (`ffac46f`)
+- `discipline.py`: tilt detector (4 components), forced cooldown, pre-trade checklist
+- 3 new scripts: `tilt_check.py`, `checklist.py`, `why_this_trade.py`
+- New agent: `discipline-coach`
+- 1 new MCP tool: `tilt_check`
+
+### Phase 3: Calibration & signal reliability (`53b2022`)
+- `calibration.py`: live vs backtest divergence detection
+- `divergence_check.py`, `stale_guard.py`, `journal_autofill.py`
+- 2 launchd plists: macro-refresh (6h), journal-autofill (23:55 CR)
+- 1 new MCP tool: `divergence_check`
+
+### Phase 4: Web dashboard (`2d602a8`)
+- FastAPI server at localhost:8080 with 8 endpoints
+- Single-page vanilla-JS dashboard (dark theme, 5s polling)
+- launchd daemon support via `make dashboard-install`
+- New optional `[dashboard]` extra (fastapi, uvicorn, httpx)
+
+### Phase 5: Notifications + ingestion (`f4eff52`)
+- Real Telegram (no SDK, urllib-based) with inline keyboard support
+- `source_grader.py`: A/B/C/F per signal source
+- `funding_alerts.py`: extreme funding detection
+- `screenshot_on_entry.py`: macOS screencapture at trade entry
+- `/correl` slash command + `correlation_report` MCP tool
+
+### Phase 6: Reliability ops (`b122fd8`)
+- `ops.py`: HealthCheck + run_all_checks (5 sub-checks)
+- 4 new scripts: `health_daemon.py`, `backup_daily.py`, `mcp_watchdog.sh`, `sync_drift_check.py`
+- 3 launchd plists: health (60s), backup (03:00 CR), mcp-watchdog (2min)
+- 1 new MCP tool: `ops_health`
+
+### Phase 7: Financial accountability (`64f3a58`)
+- `audit.py`: SHA256-chained tamper-evident log
+- 3 new scripts: `tax_tracker.py`, `risk_disclosure.py`, `margin_call_sim.py`
+- `docs/DISASTER_RECOVERY.md` runbook
+- 1 new MCP tool: `margin_sim`
+
+### Phase 8: Habits + ASCII charts (`8b58ba7`)
+- `habit_tracker.py`: 6-habit daily check-in + streak math
+- `ascii_chart.py`: Unicode-block sparklines
+- 2 slash commands: `/habit`, `/ascii`
+
+### Phase 9: Mobile + voice + Notion templates (`d0638a1`)
+- PWA support: manifest.json + service worker + mobile API key auth
+- `voice_listener.py`: wake word "hermes" + 8 phrase mappings (Windows)
+- `notion_init.py`: `--template dashboard` mode
+- `docs/IOS_PWA.md` setup guide
+
+### Phase 10: Stabilization (this commit)
+- Updated `README.md` v2 features section
+- This `CHANGELOG.md`
+- DR drill verification
+- Security pass on .gitignore
+- 207 tests green
+
+## v1.x — pre-2026-05-08
+
+See git history before commit `4b70950` for v1 evolution.
+
+---
+
 ## [Unreleased]
 
 ### Added

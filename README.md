@@ -2725,6 +2725,76 @@ git push
 
 ---
 
+## 🚀 v2 features (mayo 2026)
+
+10-phase rollout of improvements deployed:
+
+### Risk & Safety (P1)
+- **Auto SL/TP placement**: ATR-adjusted with regime-aware multipliers (1.5×-2.5×)
+- **Portfolio heat tracking**: warns when combined position risk >15% capital
+- **Correlation guard**: rejects new position if it correlates >0.7 with existing same-direction trade
+- Module: `shared/wally_core/portfolio.py`, `atr_sl.py`
+
+### Discipline (P2)
+- **Tilt detector** (0-100): overtrading, revenge, size escalation, loss streak flags
+- **Forced cooldown**: auto-trigger 60min when tilt HIGH (>70)
+- **Pre-trade checklist**: 6 mandatory questions before order
+- **"Why this trade?" prompt**: captures reasoning to memory/why_log.jsonl
+- Module: `shared/wally_core/discipline.py`
+
+### Calibration (P3)
+- **Live vs backtest divergence**: WR/PF/Sharpe drift detection
+- **Stale signal rejection**: signals >10min old auto-rejected
+- **Daily journal autofill**: cron 23:55 CR aggregates outcomes
+- **Macro cache auto-refresh**: every 6h
+- Module: `shared/wally_core/calibration.py`
+
+### Dashboard (P4)
+- **Web dashboard** at `http://localhost:8080`: 7 profiles, positions, tilt, heat, calibration
+- Real-time polling 5s
+- Loopback-only bind (no auth on local)
+- Install: `make dashboard-install`
+
+### Notifications (P5)
+- **Real Telegram bot**: inline keyboard support (no SDK dep, urllib-based)
+- **Discord ingestion scaffold**: multi-server polling with source grading A/B/C/F
+- **Funding rate alerts**: Binance perp >±0.05% → notify
+- **Auto-screenshot on entry**: macOS screencapture
+- **`/correl` slash command**: pairwise correlation matrix
+- Modules: `notify_hub.py` (modified), `source_grader.py`, `funding_alerts.py`
+
+### Reliability ops (P6)
+- **Health daemon**: 60s checks, JSONL log, macOS notify on CRITICAL
+- **Auto-backup**: daily 03:00 CR, tar.gz of memory/+cache/+logs, 14-day rotation
+- **MCP watchdog**: auto-restart wally_trader_mcp on crash, 2min poll
+- **Clock drift detector**: HTTP Date header vs local
+- Install: `make ops-install`
+
+### Accountability (P7)
+- **Audit chain**: SHA256-linked append-only log with `verify_chain()` tamper detection
+- **Tax tracker**: yearly P&L CSV per profile (FIFO)
+- **Risk disclosure**: prompts for trades >15% capital
+- **Margin call simulator**: liq price + MFE/MAE table
+- **DR runbook**: `docs/DISASTER_RECOVERY.md` (RPO 24h, RTO 30-60min)
+
+### Habits & UX (P8)
+- **Habit tracker**: 6 daily habits + perfect-day streak
+- **ASCII charts**: Unicode-block sparklines from any symbol
+- Commands: `/habit`, `/ascii`
+
+### Mobile + voice (P9)
+- **PWA dashboard** for iPhone via Safari "Add to Home Screen"
+- **Voice commands** (Hermes Windows): wake word "hermes" + 8 phrases (ES+EN)
+- **Notion dashboard templates**: pre-built widget recipes
+
+### Stats
+- **207 tests passing** across `shared/wally_core/tests/`, `wally-trader-mcp/tests/`, `adapters/*/test_*.py`
+- **9 MCP tools** total in wally-trader-mcp (portfolio_heat, auto_sl_tp, tilt_check, divergence_check, correlation_report, ops_health, margin_sim, plus the 12 from v1)
+- **8 launchd plists** (macro-refresh, journal-autofill, dashboard, funding-monitor, health-daemon, backup-daily, mcp-watchdog, hermes-daemon)
+- **6 new slash commands** (`/correl`, `/habit`, `/ascii`, plus extended `/order`, `/signal`)
+
+---
+
 ## ⚠️ Disclaimers importantes
 
 1. **Esto NO es consejo financiero.** Todo lo aquí descrito es para fines educativos y de investigación personal.

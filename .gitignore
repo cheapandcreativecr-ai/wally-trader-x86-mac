@@ -87,7 +87,20 @@ scripts/ml_system/**/*.parquet
 .claude/memory/trading_log.md
 .claude/scripts/.venv/
 
-# Sensitive — tax reports + audit chain
+# Sensitive — wally-trader v2
 .claude/profiles/*/memory/tax_*.csv
+.claude/profiles/*/memory/why_log.jsonl
 .claude/profiles/_audit/
+**/notify_errors.log
+**/cooldowns.json
+.wally/
 ~/.wally/
+
+# Logs
+logs/
+
+# Temporary
+**/.DS_Store
+
+# Mobile auth token
+**/mobile_token*

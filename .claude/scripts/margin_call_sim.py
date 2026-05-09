@@ -10,7 +10,7 @@ def main():
     p.add_argument("--leverage", type=int, required=True)
     p.add_argument("--side", choices=["LONG", "SHORT"], required=True)
     p.add_argument("--maintenance-margin-pct", type=float, default=0.5,
-                   help="Bitunix-typical maintenance margin (0.5%)")
+                   help="Bitunix-typical maintenance margin, default 0.5")
     args = p.parse_args()
 
     # Simplified linear liquidation calc (ignores fees + funding)
