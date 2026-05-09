@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.wally.macro-refresh</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/env</string>
+        <string>python3</string>
+        <string>/Users/josecampos/Documents/wally-trader/.claude/scripts/macro_calendar.py</string>
+        <string>--refresh</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>21600</integer>
+    <key>StandardOutPath</key>
+    <string>/Users/josecampos/Documents/wally-trader/logs/macro-refresh.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/josecampos/Documents/wally-trader/logs/macro-refresh.log</string>
+    <key>WorkingDirectory</key>
+    <string>/Users/josecampos/Documents/wally-trader</string>
+</dict>
+</plist>

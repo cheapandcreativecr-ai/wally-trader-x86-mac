@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.wally.journal-autofill</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/env</string>
+        <string>python3</string>
+        <string>/Users/josecampos/Documents/wally-trader/.claude/scripts/journal_autofill.py</string>
+        <string>--profile</string>
+        <string>bitunix</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>5</integer>
+        <key>Minute</key>
+        <integer>55</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/josecampos/Documents/wally-trader/logs/journal-autofill.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/josecampos/Documents/wally-trader/logs/journal-autofill.log</string>
+    <key>WorkingDirectory</key>
+    <string>/Users/josecampos/Documents/wally-trader</string>
+</dict>
+</plist>

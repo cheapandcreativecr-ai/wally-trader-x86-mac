@@ -17,6 +17,7 @@ from .tools.macross_signal import macross_signal as _macross_signal
 from .tools.portfolio_heat import portfolio_heat as _portfolio_heat
 from .tools.auto_sl_tp import auto_sl_tp as _auto_sl_tp
 from .tools.tilt_check import tilt_check_tool as _tilt_check
+from .tools.divergence import divergence_check_tool as _divergence_check
 
 mcp = FastMCP("wally-trader")
 
@@ -180,6 +181,12 @@ def tilt_check(
 ) -> dict:
     """Tilt detection + cooldown status for a profile."""
     return _tilt_check(profile, recent_trades_json, cooldown_file)
+
+
+@mcp.tool()
+def divergence_check(profile: str, window_days: int = 30) -> dict:
+    """Live vs backtest calibration divergence."""
+    return _divergence_check(profile, window_days)
 
 
 def main():

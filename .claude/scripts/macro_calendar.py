@@ -282,6 +282,8 @@ def run(cache_path: Path) -> int:
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
+    p.add_argument("--refresh", action="store_true",
+                   help="Alias for default behavior — refresh the macro events cache")
     args = p.parse_args()
     return run(args.cache)
 
