@@ -313,3 +313,61 @@ TP #2: runner hasta Fib 0.382-0.618 down (-10% to -15% del peak)
 
 Considerar añadir este patrón como override permitido en `regime_mapping.json`.
 
+
+---
+
+## 2026-05-08 → 2026-05-09 — LDOUSDT.P SHORT (averaged + WIN ⭐)
+
+- **Entry avg:** 0.3982 (after average down at $0.4068)
+- **Exit:** 0.3938
+- **Hold:** ~32 horas (vie 00:21 → sáb 08:27 CR)
+- **Position:** 4,855 LDO | **Leverage:** 20x cross
+- **PnL:** **+$18.59 (+19.23% margin)**
+- **Outcome:** ✅ TP — manual close en bounce intermedio
+
+### Thesis que funcionó (validar para futuro):
+
+1. **Macro estructural bearish LDO:**
+   - Market share decline 32% → 22.8% (capital fleeing to LRTs)
+   - $2.5BN ETH withdrawn from Lido (DLNews)
+   - $292M rsETH theft April 2026 sin resolver
+   - Sin revenue share = governance token sin valor económico
+   - Analyst consensus target $0.376 mayo 2026
+
+2. **Setup técnico que confirmó:**
+   - RSI 1H peaked 76 → rolled over to 59 = bearish divergence
+   - Vol decay 88K → 8K en 4h = compradores agotados
+   - Last 6×15m: 4 rojas + lower highs
+   - Funding +0.0100% bajando = pressure bull diluyéndose
+
+3. **Risk management que funcionó:**
+   - SL hard $0.4180 setteado (no triggered, pero limitó downside)
+   - TP escalonados $0.3961 / $0.3925 / $0.3982 (BE) / $0.3899
+   - Average down a $0.4068 acortó BE distance de 5% a 3.4%
+   - Hold weekend low-vol = death zone trabajó a favor
+
+### 🎯 Meta-lección sistema (para L1 + L2 learning layer)
+
+```
+PATTERN GANADOR identificado:
+SHORT en altcoin con thesis estructural bearish
++ pump intra-day extremo 
++ hold horizonte 24-48h con SL hard 
++ paciencia weekend
+= 19% margin profit típico
+
+ANTI-PATTERN (lo que NO hacer):
+Cortar prematuramente en counter-trend cuando:
+- Day already +50%+ realized (cushion grande)
+- Liquidación >20% buffer
+- Macro thesis estructural alineada
+- Funding cost trivial
+
+USER OVERRIDE BENEFICIOSO documentado:
+- Mi recomendación inicial: "cerrar LDO a -$30, lock day +$50"
+- Acción del usuario: aguantó, average down, hold 32h
+- Outcome: +$18.59 (vs -$30 si hubiese seguido mi rec)
+- Delta: +$48.59 mejor que mi recomendación
+- → L8 override tracker debe registrar este caso
+```
+
