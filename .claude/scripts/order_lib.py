@@ -1,11 +1,49 @@
 """Order construction + persistence helpers called from /order slash command."""
 from __future__ import annotations
 
+import json
+import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 from pending_lib import append_pending, load_all_pendings, apply_whitelist_matrix
+
+_SCRIPTS_DIR = Path(__file__).parent
+
+
+def check_cooldown(profile: str) -> tuple[bool, str]:
+    """Return (blocked, reason). Calls tilt_check.py --check-cooldown-only.
+
+    exit code 2 = cooldown active (BLOCK).
+    exit code 0 = no cooldown (OK).
+    Non-zero != 2 = tool error → do NOT block (fail open).
+    """
+    try:
+        result = subprocess.run(
+            [
+                "python3",
+                str(_SCRIPTS_DIR / "tilt_check.py"),
+                "--profile", profile,
+                "--check-cooldown-only",
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 2:
+            try:
+                data = json.loads(result.stdout)
+                reason = data.get("reason") or "cooldown active"
+                mins = data.get("minutes_remaining", "?")
+                return True, f"cooldown_active: {mins} min remaining ({reason})"
+            except Exception:
+                return True, "cooldown_active (could not parse details)"
+        return False, "ok"
+    except Exception as exc:
+        # Tool error → fail open, don't block order
+        return False, f"cooldown_check_error: {exc}"
 
 
 # Default TP splits per profile
@@ -135,7 +173,56 @@ def preflight_whitelist(order: dict) -> tuple[bool, str]:
 
 
 def create_and_persist(order: dict) -> dict:
-    """Append to pending_orders.json + return the persisted order."""
+    """Append to pending_orders.json + return the persisted order.
+
+    Wire-ins (v2):
+    1. Cooldown gate: if tilt_check reports active cooldown → raise RuntimeError (BLOCK).
+    2. Auto SL/TP: if sl is falsy (0 or None) and entry+side are available, attempt
+       to compute SL via auto_sl_tp.py. Failure is non-blocking (falls through).
+    """
+    profile = order.get("profile", "unknown")
+
+    # --- Gate 1: cooldown check ---
+    blocked, reason = check_cooldown(profile)
+    if blocked:
+        raise RuntimeError(f"ORDER_BLOCKED — {reason}. Clear cooldown or use override.")
+
+    # --- Gate 2: auto SL/TP if SL missing ---
+    if not order.get("sl"):
+        entry = order.get("entry")
+        side = order.get("side")
+        if entry and side:
+            try:
+                # Use a default ATR of 0.5% (rough placeholder when no live data)
+                atr_pct = 0.5
+                result = subprocess.run(
+                    [
+                        "python3",
+                        str(_SCRIPTS_DIR / "auto_sl_tp.py"),
+                        "--entry", str(entry),
+                        "--side", str(side).upper(),
+                        "--atr-pct", str(atr_pct),
+                        "--regime", "RANGE_CHOP",
+                        "--json",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if result.returncode == 0:
+                    data = json.loads(result.stdout)
+                    order["sl"] = data.get("sl_price", order.get("sl"))
+                    tps = data.get("tp_levels", {})
+                    if not order.get("tp1") and tps.get("tp1"):
+                        order["tp1"] = tps["tp1"]
+                    if not order.get("tp2") and tps.get("tp2"):
+                        order["tp2"] = tps["tp2"]
+                    if not order.get("tp3") and tps.get("tp3"):
+                        order["tp3"] = tps["tp3"]
+                    order["_auto_sl_tp_applied"] = True
+            except Exception:
+                pass  # fail open — let caller decide
+
     return append_pending(order["profile"], order)
 
 

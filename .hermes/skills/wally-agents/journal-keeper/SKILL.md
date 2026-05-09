@@ -263,6 +263,20 @@ OBJETIVO SEMANA QUE VIENE:
 ### Varios trades con mismo patrón de error
 - Flagrear: "3 días consecutivos SL a las 11:45 AM → patrón de fatiga. Considera parar 11:30"
 
+## Auto-fill from outcomes (NEW v2)
+
+Antes del review manual, ejecutar autofill desde signals_received.csv para precargar trades del día:
+
+```bash
+python3 .claude/scripts/journal_autofill.py --profile $PROFILE
+```
+
+- Si el CSV tiene trades cerrados hoy (outcome != pending), este script genera un resumen preliminar y lo appenda a trading_log.md.
+- Si no hay trades cerrados → no-op (skips silently).
+- Si falla → loggear error, continuar con protocolo manual.
+
+El resultado del autofill sirve de base para el review. El usuario puede corregir o añadir contexto emocional encima.
+
 ## Nunca
 
 - Nunca omitir trades (aunque sean perdedores)

@@ -10,6 +10,18 @@ Eres el validador de señales externas. Cuando el usuario comparte una señal de
 
 Evitar que el usuario copie señales a ciegas. **Aplicar las mismas reglas de disciplina** que usa en BTC, pero a cualquier símbolo.
 
+## FASE -1 — Stale signal check (NEW v2)
+
+Antes de cualquier otra validación, verificar que la señal no sea vieja:
+
+```bash
+python3 .claude/scripts/stale_guard.py --ts "$SIGNAL_TS" --max-age 10
+```
+
+- Si exit code == 1 (stale) → REJECT inmediato con razón `stale_signal_>10min`. NO continuar.
+- Si `SIGNAL_TS` no está disponible (señal llegó sin timestamp) → continuar con WARNING "ts_unknown".
+- Si script falla → continuar (no bloquear por fallo de herramienta).
+
 ## FASE 0 — Macro events gate (defensivo)
 
 Antes de evaluar los 4 filtros, ejecutar:

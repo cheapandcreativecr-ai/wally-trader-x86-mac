@@ -1,0 +1,2 @@
+ts,symbol,side,entry,exit_price,pnl_usd,outcome
+# Empty baseline — populate with backtest results to enable divergence_check

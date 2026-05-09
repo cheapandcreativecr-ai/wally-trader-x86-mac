@@ -20,13 +20,25 @@ Mapping ganador (auto-loaded):
 - VOLATILE          → STAND_ASIDE (insuficiente data)
 """
 
+import csv
 import json
+import os
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent))
+
+_SHARED = Path(__file__).resolve().parent.parent.parent / "shared/wally_core/src"
+if _SHARED.exists() and str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+try:
+    from wally_core.portfolio import would_breach, Position
+    _PORTFOLIO_AVAILABLE = True
+except ImportError:
+    _PORTFOLIO_AVAILABLE = False
 
 from backtest_regime_matrix import (
     fetch, calc_atr, calc_rsi, calc_ema, calc_macd, calc_bb, calc_adx, calc_vwap,
@@ -51,6 +63,53 @@ STRATEGY_FNS = {
 }
 
 MAPPING_FILE = Path(__file__).parent / "regime_mapping.json"
+CAPITAL_USD = 200.0  # Bitunix profile capital — updated manually when profile equity changes
+MAX_HEAT_PCT = 15.0   # portfolio heat limit
+
+
+def _load_open_positions() -> list:
+    """Load currently open (pending outcome) positions from signals_received.csv.
+
+    Returns list of wally_core.portfolio.Position objects, or empty if unavailable.
+    """
+    if not _PORTFOLIO_AVAILABLE:
+        return []
+    profiles_dir = Path(os.environ.get("WALLY_PROFILES_DIR", ".claude/profiles"))
+    csv_path = profiles_dir / "bitunix" / "memory" / "signals_received.csv"
+    if not csv_path.exists():
+        return []
+    positions = []
+    try:
+        with open(csv_path, newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("outcome", "pending").lower() == "pending":
+                    try:
+                        margin = float(row.get("margin_usd") or 50.0)
+                        leverage = int(row.get("leverage") or 10)
+                        entry = float(row.get("entry") or 0)
+                        sl = float(row.get("sl") or 0) or None
+                        symbol = row.get("symbol") or "UNKNOWN"
+                        side = row.get("side", "LONG").upper()
+                        if entry > 0:
+                            # qty ≈ notional / entry
+                            qty = round(margin * leverage / entry, 6)
+                            positions.append(
+                                Position(
+                                    symbol=symbol,
+                                    side=side,
+                                    margin_usd=margin,
+                                    leverage=leverage,
+                                    entry_price=entry,
+                                    sl_price=sl,
+                                    qty=qty,
+                                )
+                            )
+                    except (ValueError, TypeError):
+                        continue
+    except Exception:
+        pass
+    return positions
 
 
 def load_mapping() -> dict:
@@ -214,6 +273,34 @@ def main():
         r["trail_sl"] = round(be_trail, 4)
         r["trail_sl_offset_atr"] = trail_offset
         r["atr_15m"] = round(atr, 4)
+        # Stage 6: portfolio breach guard (new v2 wire-in)
+        if _PORTFOLIO_AVAILABLE:
+            try:
+                open_positions = _load_open_positions()
+                sizing_margin = r.get("sizing", {}).get("margin_usd", 4.0)
+                new_pos = Position(
+                    symbol=r["asset"],
+                    side=r["side"],
+                    margin_usd=sizing_margin,
+                    leverage=10,
+                    entry_price=r["entry"],
+                    sl_price=r.get("sl") or None,
+                    qty=round(sizing_margin * 10 / r["entry"], 6) if r["entry"] else 0.0,
+                )
+                breach = would_breach(new_pos, open_positions, CAPITAL_USD, MAX_HEAT_PCT)
+                if breach.breach:
+                    r["status"] = "VETOED"
+                    r["vetos"] = r.get("vetos", []) + [{
+                        "name": "portfolio_heat",
+                        "passed": False,
+                        "reason": f"would_breach: {breach.reason} {breach.detail}",
+                    }]
+                    vetoed.append(r)
+                    continue
+            except Exception as exc:
+                # Non-blocking — log but don't block the signal
+                r["portfolio_breach_check"] = f"error: {exc}"
+
         r["status"] = "APPROVED"
         approved.append(r)
 
