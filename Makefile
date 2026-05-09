@@ -166,4 +166,13 @@ ops-uninstall:  ## Unload and remove all 3 ops daemons
 	rm -f ~/Library/LaunchAgents/com.wally.backup-daily.plist
 	rm -f ~/Library/LaunchAgents/com.wally.mcp-watchdog.plist
 
-.PHONY: health backup ops-install ops-uninstall
+habit:  ## Show habit streak
+	python3 .claude/scripts/habit_tracker.py --streak
+
+habit-checkin:  ## Interactive habit check-in
+	python3 .claude/scripts/habit_tracker.py --check-in
+
+ascii:  ## ASCII sparkline (usage: make ascii SYM=BTCUSDT TF=1h BARS=60)
+	python3 .claude/scripts/ascii_chart.py --symbol $${SYM:-BTCUSDT} --tf $${TF:-1h} --bars $${BARS:-60}
+
+.PHONY: health backup ops-install ops-uninstall habit habit-checkin ascii
