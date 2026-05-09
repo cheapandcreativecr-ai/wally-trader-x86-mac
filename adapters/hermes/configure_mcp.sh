@@ -60,7 +60,7 @@ echo "📡 Registering MCP servers in Hermes config..."
 echo "   Source: $SERVERS_JSON"
 
 python3 - "$SERVERS_JSON" "$REPO" <<'PYEOF'
-import sys, os, json, subprocess, re
+import sys, os, json, subprocess, re, platform
 
 servers_path = sys.argv[1]
 repo         = sys.argv[2]
@@ -69,6 +69,47 @@ with open(servers_path) as f:
     data = json.load(f)
 
 servers = data.get("servers", {})
+
+# ── Platform detection ────────────────────────────────────────────────────────
+# We expose three buckets for platform_overrides: "wsl", "macos", "linux".
+# WSL is detected by looking for "microsoft" or "wsl" in /proc/sys/kernel/osrelease,
+# which is the canonical signal (works across WSL1/WSL2 and any distro).
+def detect_platform() -> str:
+    osrel = ""
+    try:
+        with open("/proc/sys/kernel/osrelease") as f:
+            osrel = f.read().lower()
+    except FileNotFoundError:
+        pass
+    if "microsoft" in osrel or "wsl" in osrel:
+        return "wsl"
+    sysname = platform.system().lower()
+    if sysname == "darwin":
+        return "macos"
+    return "linux"
+
+PLATFORM = detect_platform()
+print(f"  🖥  detected platform: {PLATFORM}")
+
+def apply_platform_override(name: str, cfg: dict) -> dict:
+    """If the server defines platform_overrides[PLATFORM], shallow-merge it on top."""
+    overrides = cfg.get("platform_overrides", {})
+    pov = overrides.get(PLATFORM)
+    if not pov:
+        return cfg
+    merged = dict(cfg)
+    # Shallow merge: override fields replace top-level. Nested dicts (env) merged.
+    for k, v in pov.items():
+        if k.startswith("$"):  # skip $comment etc
+            continue
+        if k == "env" and isinstance(v, dict):
+            merged_env = dict(merged.get("env", {}))
+            merged_env.update(v)
+            merged[k] = merged_env
+        else:
+            merged[k] = v
+    print(f"     ↳ {name}: applied platform_overrides[{PLATFORM}]")
+    return merged
 
 def expand_env(value: str) -> str:
     """Expand ${VAR} → env value. Warn if unset, keep literal."""
@@ -101,6 +142,7 @@ for name, cfg in servers.items():
         continue
 
     print(f"\n  ── {name} ──")
+    cfg = apply_platform_override(name, cfg)
     ok = True
 
     # command

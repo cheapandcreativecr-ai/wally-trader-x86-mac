@@ -251,3 +251,65 @@ Recalibrar filtros: SI/NO
 **Aprendizaje:** _pendiente_
 
 ---
+
+---
+
+## 2026-05-07 21:56 — DYDXUSDT.P SHORT #1 (visual copy, sin /signal)
+
+- **Entry:** 0.2016 | **Exit:** 0.1957 | **Hold:** 5 min
+- **Position:** 4,844 DYDX | **Leverage:** 20x cross
+- **PnL:** **+$27.82 (+56.96% margin)**
+- **Outcome:** ✅ TP — manual close en bounce zone
+- **Aprendizaje:** scalp inicial del fade, 5 min hold. RSI 4H 82.5 + vol decay = fade textbook.
+
+## 2026-05-07 22:17 — DYDXUSDT.P SHORT #2 (RE-ENTRY post-bounce ⭐)
+
+- **Entry:** 0.2018 | **Exit:** 0.1888 | **Hold:** 1h 3min
+- **Position:** 4,839 DYDX | **Leverage:** 20x cross
+- **PnL:** **+$62.17 (+127.31% margin)**
+- **Setup:** Bounce post-scalp #1 → precio rebotó **arriba del entry #1 ($0.2016)**.
+  Re-entry $0.2018 = +0.10% mejor que entry #1, premium SHORT entry post-trap.
+- **Outcome:** ✅ TP — runner del fade, llegó cerca del Fib 0.382 ($0.1813)
+- **Aprendizaje:**
+  1. **Double-dip fade**: scalp inicial $0.2016→$0.1957 + re-entry $0.2018→$0.1888. Llevarse ambos legs requiere salir del primero (no greedy) y volver a entrar en el bounce.
+  2. Sistema decía "TREND_EXTREMO no fade" pero comunidad tenía edge operacional sobre pumps parabólicos
+  3. Las señales reales de fade en pump exhaustion: **RSI extremo + vol decay + posicionamiento crowded** > regime ADX
+  4. Vol 15m decay (36M→9.7M) era el tell — confirmación de momentum dying que yo subestimé
+  5. Total session DYDX: +$89.98 (+27% capital en 1h 8min)
+
+## 🔄 Lección del sistema
+
+El regime gate ADX>40 = no fade es **demasiado estricto para pumps parabólicos de altcoins con confluencia de exhaustion**. Considerar regla refinada:
+
+```
+SHORT en TREND_EXTREMO bull permitido SI:
+  - RSI 4H >= 80 (overbought extremo)
+  - Volumen 15m decay >= 50% de peak
+  - Movimiento previo >= +25% en <72h (parabolic)
+  - Posicionamiento (top L/S) crowded >= 60% mismo lado
+  - Sizing reducido (HALF max)
+  - SL ultra-tight 15-bar high con DUREX agresivo
+```
+
+
+
+## 🎯 Meta-lección 2026-05-07: Fade-the-pump double entry
+
+Lo que ejecutaste hoy es un patrón avanzado que NO está en el playbook actual:
+
+```
+Setup: altcoin con pump parabólico extremo (>+25% en 24h)
+Trigger: RSI 4H >= 80 + vol 15m decay >= 50% peak
+Entry #1: SHORT en el peak/wick top con SL 15-bar high
+TP #1: salir cuando vol confirma down-leg (no esperar fib lejano)
+Re-entry condition: precio rebota ARRIBA del entry #1 (trap de shorts débiles)
+Entry #2: SHORT en el nuevo high local con SL 4H high
+TP #2: runner hasta Fib 0.382-0.618 down (-10% to -15% del peak)
+```
+
+**Key insight:** la regla del sistema "TREND_EXTREMO no fade" debe matizarse:
+- ❌ NO fade = catch falling knife en altcoin random
+- ✅ SÍ fade = pump parabólico EXACTO con confluencia de exhaustion
+
+Considerar añadir este patrón como override permitido en `regime_mapping.json`.
+

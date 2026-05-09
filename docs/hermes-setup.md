@@ -1,8 +1,10 @@
 # Hermes Operational Layer — Setup Guide
 
+> **Two supported hosts:** macOS (everything on one machine) or Windows 11 + WSL Ubuntu (Hermes/wally MCP in Linux, TV MCP bridged into Windows native). Most steps are shared; jump to the [WSL section](#setup-on-windows-11--wsl-ubuntu) for the cross-OS bridge details.
+
 ## What this enables
 
-Send `/punk-hunt` from your phone's Telegram → Hermes (running on your Mac) receives it → invokes MCP tools → draws levels on TradingView Desktop — all from anywhere in the world.
+Send `/punk-hunt` from your phone's Telegram → Hermes (running on your Mac or WSL host) receives it → invokes MCP tools → draws levels on TradingView Desktop — all from anywhere in the world.
 
 ```
 You (Telegram mobile)
@@ -97,7 +99,17 @@ Expected output: `6/6 checks passing`.
 
 ## Step 3 — Telegram bot setup
 
-### Create a bot
+### Interactive setup (recommended)
+
+```bash
+make hermes-telegram-setup
+```
+
+Walks you through token → @getMe validation → chat_id auto-discovery (polls
+Telegram for your first inbound message) → allowlist → confirmation message.
+Idempotent — safe to re-run after rotating the token.
+
+### Manual setup (if interactive fails)
 
 1. Open Telegram → search for **@BotFather** → `/newbot`
 2. Follow prompts → copy the **bot token** (looks like `7123456789:AAF...`)
@@ -107,17 +119,15 @@ Expected output: `6/6 checks passing`.
 hermes config set telegram.bot_token 7123456789:AAFyourTokenHere
 ```
 
-### Find your chat_id
-
-1. Send any message to your new bot in Telegram
-2. Fetch updates:
+4. Send any message to your new bot in Telegram
+5. Fetch updates:
 
 ```bash
 curl -s "https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates" | python3 -m json.tool | grep '"id"'
 ```
 
-3. The number next to `"id"` under `"chat"` is your chat_id (e.g. `123456789`)
-4. Allowlist it:
+6. The number next to `"id"` under `"chat"` is your chat_id (e.g. `123456789`)
+7. Allowlist it:
 
 ```bash
 hermes config set telegram.allowed_chat_ids '[123456789]'
@@ -213,11 +223,24 @@ Full autonomous scan → scores all bitunix assets → picks best setup → draw
 ## Makefile reference
 
 ```bash
-make hermes-install           # install/refresh adapter + register MCPs
-make hermes-smoke             # 6-check smoke test
-make hermes-daemon-install    # load launchd plist (start on login)
-make hermes-daemon-uninstall  # unload + remove plist
-make hermes-status            # show daemon status + MCP config
+# Setup
+make hermes-install            # install/refresh adapter + register MCPs (WSL-aware)
+make hermes-smoke              # base smoke test
+make hermes-doctor             # smoke + WSL-specific checks (alias)
+make hermes-telegram-setup     # interactive Telegram token + chat_id
+
+# Daemon (macOS)
+make hermes-daemon-install     # load launchd plist
+make hermes-daemon-uninstall   # unload plist
+
+# Daemon (Linux / WSL)
+make hermes-systemd-install    # install systemd-user unit + enable --now
+make hermes-systemd-uninstall  # disable + remove unit
+
+# Both
+make hermes-restart            # restart daemon (auto-detects launchd vs systemd)
+make hermes-logs               # tail logs/hermes-daemon.log
+make hermes-status             # daemon status + registered MCPs
 ```
 
 ---
@@ -300,6 +323,165 @@ hermes config set telegram.allowed_chat_ids '[YOUR_CHAT_ID]'
 
 ---
 
+## Setup on Windows 11 + WSL Ubuntu
+
+This is the path when the always-on host is a Windows 11 PC and you want
+Hermes + the wally MCP to live in WSL (Linux native, faster Python/venv) while
+the **TradingView MCP runs on Windows** (because TV Desktop is Windows-only
+and attaches via Chrome DevTools Protocol).
+
+### Architecture (cross-OS)
+
+```
+Telegram mobile
+      │
+      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Windows 11 PC (always on)                                  │
+│  ┌────────────────────────────┐   ┌───────────────────────┐ │
+│  │  WSL Ubuntu                │   │  Windows native       │ │
+│  │  ┌──────────────────────┐  │   │  ┌─────────────────┐  │ │
+│  │  │  Hermes daemon       │  │   │  │ TradingView     │  │ │
+│  │  │  (systemd-user)      │  │   │  │ Desktop         │  │ │
+│  │  └─────┬─────────┬──────┘  │   │  └────────▲────────┘  │ │
+│  │        │         │         │   │           │ CDP       │ │
+│  │        ▼         │         │   │           │           │ │
+│  │  ┌──────────┐    │         │   │   ┌───────┴───────┐   │ │
+│  │  │ wally    │    │         │   │   │ tradingview-  │   │ │
+│  │  │ MCP      │    │         │   │   │ mcp (node.exe)│   │ │
+│  │  │ (python) │    │         │   │   └───────▲───────┘   │ │
+│  │  └──────────┘    │         │   │           │ stdio     │ │
+│  │                  │         │   │           │           │ │
+│  │  ┌───────────────▼──────┐  │ ──┼─────► (interop)       │ │
+│  │  │ wsl_tv_bridge.sh     │──┼───┼──────────┘            │ │
+│  │  │ exec node.exe via    │  │   │                        │ │
+│  │  │ /mnt/c/.../node.exe  │  │   │                        │ │
+│  │  └──────────────────────┘  │   │                        │ │
+│  └────────────────────────────┘   └────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Prerequisites (Windows 11 side)
+
+| Component | Where | Notes |
+|---|---|---|
+| WSL2 Ubuntu | `wsl --install -d Ubuntu` | Make sure systemd is enabled |
+| systemd in WSL | `/etc/wsl.conf` → `[boot]\nsystemd=true` then `wsl --shutdown` | Required for `systemctl --user` |
+| Node.js (Windows) | https://nodejs.org → MSI installer | Default path `C:\Program Files\nodejs\node.exe` |
+| TradingView Desktop | Windows native, signed in to your account | Must be open when Hermes runs |
+| Repo cloned twice | Once in WSL (`~/wally-trader`), once in Windows (`C:\Users\<you>\wally-trader`) | Sync with git or `\\wsl$` UNC path |
+
+### Step W1 — One-time setup in WSL
+
+```bash
+cd ~/wally-trader
+make wally-mcp-install     # python venv + wally_trader_mcp
+make hermes-install        # adapter + skills + MCP registration (auto-detects WSL)
+```
+
+`configure_mcp.sh` detects WSL via `/proc/sys/kernel/osrelease` and applies
+the `tradingview.platform_overrides.wsl` entry from `system/mcp/servers.json`,
+which routes the TV MCP through `wsl_tv_bridge.sh` instead of plain `node`.
+
+### Step W2 — Configure the Windows-side bridge
+
+Inside the Windows-side clone, install `tradingview-mcp` deps:
+
+```powershell
+# In Windows PowerShell
+cd C:\Users\<you>\wally-trader\tradingview-mcp
+npm install
+```
+
+Back in WSL, create `~/wally-trader/.env` with the Windows path:
+
+```bash
+# ~/wally-trader/.env  (gitignored)
+TV_MCP_WIN_REPO=C:\Users\jose\wally-trader
+WIN_NODE_EXE=/mnt/c/Program Files/nodejs/node.exe
+NOTION_API_KEY=secret_xxx        # optional
+```
+
+Verify the bridge resolves:
+
+```bash
+make hermes-doctor   # smoke test, includes WSL-specific checks
+```
+
+You should see:
+```
+[PASS] WSL: tv bridge script present + executable
+[PASS] WSL: Windows node.exe reachable at /mnt/c/Program Files/nodejs/node.exe
+[PASS] WSL: TV_MCP_WIN_REPO points to valid Windows clone (C:\Users\jose\wally-trader)
+```
+
+### Step W3 — Telegram bot
+
+```bash
+make hermes-telegram-setup   # interactive: token → chat_id auto → confirmation
+```
+
+### Step W4 — Run as systemd-user service
+
+```bash
+make hermes-systemd-install   # copies unit, daemon-reload, enable --now
+
+# Survive logout / WSL shell exit:
+loginctl enable-linger $USER
+
+# Verify:
+systemctl --user status hermes
+journalctl --user -u hermes -f    # live logs
+make hermes-logs                  # alternative: tails logs/hermes-daemon.log
+```
+
+To restart after editing config:
+
+```bash
+make hermes-restart   # auto-detects systemd vs launchd
+```
+
+### WSL troubleshooting
+
+**`/proc/sys/kernel/osrelease` doesn't say microsoft/wsl** — you're not on WSL2.
+The bridge defensively refuses to run; verify with `cat /proc/sys/kernel/osrelease`.
+
+**`node.exe` returns "module not found"** — the Windows-side `tradingview-mcp/`
+folder is missing or has no `node_modules/`. Run `npm install` inside
+`C:\Users\<you>\wally-trader\tradingview-mcp\` from Windows PowerShell, not WSL.
+
+**TV MCP starts but draws nothing** — TradingView Desktop must be open and
+focused on the symbol you're trying to draw on (`BINANCE:BTCUSDT.P` for retail,
+`BINGX:BTCUSDT.P` for retail-bingx, etc.). The MCP attaches via CDP to the
+running TV Electron process; if TV is closed or on a different ticker, drawing
+tools fail silently.
+
+**systemd-user not available (`Failed to connect to bus`)** — your WSL doesn't
+have systemd enabled. Edit `/etc/wsl.conf`:
+
+```ini
+[boot]
+systemd=true
+```
+
+Then `wsl --shutdown` from Windows PowerShell and re-open the WSL shell.
+
+**Daemon stops when you close the WSL shell** — you didn't enable lingering:
+`loginctl enable-linger $USER`. Without this, systemd-user tears down when
+your last login session ends.
+
+**Need different paths than the wrapper auto-detects** — set in `~/wally-trader/.env`:
+
+```bash
+HERMES_SUBCMD=serve   # force the subcommand if --help parsing fails
+WIN_NODE_EXE=/mnt/c/Tools/node-v20/node.exe   # nvm-windows custom path
+```
+
+The wrapper sources `.env` before exec'ing hermes, so any override applies
+on next `make hermes-restart`.
+
+---
+
 ## Cross-device caveat
 
 This setup ties all MCP tool execution to **your Mac being awake and running**.
@@ -318,10 +500,15 @@ just point TradingView MCP at a Mac mini running TV Desktop in screen share mode
 
 | File | Purpose |
 |---|---|
-| `adapters/hermes/install.sh` | One-command setup (skills + symlink + MCPs) |
-| `adapters/hermes/configure_mcp.sh` | MCP registration only (idempotent) |
+| `adapters/hermes/install.sh` | One-command setup (skills + symlink + MCPs + chmod helpers) |
+| `adapters/hermes/configure_mcp.sh` | MCP registration (idempotent, WSL-aware via `platform_overrides`) |
 | `adapters/hermes/transform.py` | Converts `system/` → `.hermes/skills/` |
-| `scripts/hermes_smoke.sh` | 6-check smoke test |
-| `.claude/launchd/com.wally.hermes-daemon.plist` | launchd plist for daemon |
-| `system/mcp/servers.json` | Canonical MCP server definitions |
-| `logs/hermes-daemon.log` | Daemon stdout+stderr (created at runtime) |
+| `adapters/hermes/hermes_daemon_wrapper.sh` | Launched by launchd/systemd. Auto-detects hermes binary + subcommand, sources `.env`, rotates logs |
+| `adapters/hermes/wsl_tv_bridge.sh` | WSL-only: exec's `node.exe` against the Windows-side tradingview-mcp |
+| `adapters/hermes/telegram_setup.sh` | Interactive Telegram bootstrap (token + chat_id auto-discovery) |
+| `scripts/hermes_smoke.sh` | Smoke test, 6 base + 3 WSL-only checks |
+| `.claude/launchd/com.wally.hermes-daemon.plist` | launchd plist for daemon (macOS) |
+| `.claude/systemd/hermes.service` | systemd-user unit (Linux/WSL) |
+| `system/mcp/servers.json` | Canonical MCP server definitions (with `platform_overrides`) |
+| `.env` | Local secrets / per-machine overrides (`TV_MCP_WIN_REPO`, `WIN_NODE_EXE`, `HERMES_SUBCMD`, `NOTION_API_KEY`) |
+| `logs/hermes-daemon.log` | Daemon stdout+stderr (created at runtime, rotated by wrapper) |

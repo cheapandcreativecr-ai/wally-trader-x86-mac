@@ -113,6 +113,60 @@ else
   fi
 fi
 
+# ── Check 7: hermes_daemon_wrapper.sh exists + executable ────────────────────
+WRAPPER="$REPO/adapters/hermes/hermes_daemon_wrapper.sh"
+if [ -x "$WRAPPER" ]; then
+  pass "daemon wrapper present + executable"
+elif [ -f "$WRAPPER" ]; then
+  fail "daemon wrapper executable bit" "$(basename $WRAPPER) exists but not +x — run: chmod +x $WRAPPER"
+else
+  fail "daemon wrapper present" "missing — run: bash adapters/hermes/install.sh"
+fi
+
+# ── Check 8: WSL detection + bridge readiness (only when on WSL) ─────────────
+IS_WSL=false
+if grep -qiE 'microsoft|wsl' /proc/sys/kernel/osrelease 2>/dev/null; then
+  IS_WSL=true
+fi
+
+if [ "$IS_WSL" = true ]; then
+  BRIDGE="$REPO/adapters/hermes/wsl_tv_bridge.sh"
+  if [ -x "$BRIDGE" ]; then
+    pass "WSL: tv bridge script present + executable"
+  else
+    fail "WSL: tv bridge" "missing or not +x — run: chmod +x $BRIDGE"
+  fi
+
+  # Source .env to honor user's TV_MCP_WIN_REPO setting if present
+  if [ -f "$REPO/.env" ]; then
+    set -a; . "$REPO/.env"; set +a
+  fi
+
+  WIN_NODE_EXE="${WIN_NODE_EXE:-/mnt/c/Program Files/nodejs/node.exe}"
+  if [ -x "$WIN_NODE_EXE" ]; then
+    pass "WSL: Windows node.exe reachable at $WIN_NODE_EXE"
+  else
+    fail "WSL: Windows node.exe" "not at $WIN_NODE_EXE — install Node.js on Windows or set WIN_NODE_EXE in .env"
+  fi
+
+  if [ -n "${TV_MCP_WIN_REPO:-}" ]; then
+    if command -v wslpath >/dev/null 2>&1; then
+      WIN_REPO_WSL="$(wslpath -u "$TV_MCP_WIN_REPO" 2>/dev/null || true)"
+      if [ -n "$WIN_REPO_WSL" ] && [ -d "$WIN_REPO_WSL/tradingview-mcp" ]; then
+        pass "WSL: TV_MCP_WIN_REPO points to valid Windows clone ($TV_MCP_WIN_REPO)"
+      else
+        fail "WSL: TV_MCP_WIN_REPO valid" "$TV_MCP_WIN_REPO does not contain tradingview-mcp/ when viewed from WSL"
+      fi
+    else
+      skip "WSL: TV_MCP_WIN_REPO validation" "wslpath not available"
+    fi
+  else
+    fail "WSL: TV_MCP_WIN_REPO env var" "unset — add to $REPO/.env (e.g. TV_MCP_WIN_REPO=C:\\Users\\you\\wally-trader)"
+  fi
+else
+  skip "WSL bridge checks" "not running on WSL"
+fi
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 TOTAL_CHECKED=$((PASS + FAIL))
 echo ""

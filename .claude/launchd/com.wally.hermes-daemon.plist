@@ -4,31 +4,28 @@
   com.wally.hermes-daemon.plist
   Keeps the Hermes Telegram bot alive on macOS login.
 
-  TODO: confirm Hermes daemon command before loading.
-  The ProgramArguments below uses "hermes serve" (likely correct for
-  Hermes v0.x server/daemon mode). If your version uses a different
-  subcommand (e.g. "hermes bot", "hermes daemon", "hermes run"),
-  update the <string> entries in ProgramArguments accordingly.
+  ProgramArguments invokes adapters/hermes/hermes_daemon_wrapper.sh, which:
+    - Auto-detects the hermes binary (Homebrew /opt/homebrew, /usr/local, etc.)
+    - Auto-detects the daemon subcommand (serve|bot|daemon|run)
+    - Sources $REPO/.env for secrets (NOTION_API_KEY, etc.)
+    - Rotates logs/hermes-daemon.log when it grows past 10 MB
+  This means the plist itself never needs editing across machines.
 
-  Install:
-    make hermes-daemon-install
-  Uninstall:
-    make hermes-daemon-uninstall
-  Logs:
-    tail -f /Users/josecampos/Documents/wally-trader/logs/hermes-daemon.log
+  Install:    make hermes-daemon-install
+  Uninstall:  make hermes-daemon-uninstall
+  Restart:    make hermes-restart
+  Logs:       make hermes-logs
 -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
     <string>com.wally.hermes-daemon</string>
 
-    <!-- TODO: confirm Hermes daemon command -->
-    <!-- Change "serve" to the correct subcommand for your Hermes version. -->
-    <!-- Common alternatives: hermes bot | hermes daemon | hermes run     -->
+    <!-- Wrapper handles binary + subcommand detection. No more hardcoded paths. -->
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/hermes</string>
-        <string>serve</string>
+        <string>/bin/bash</string>
+        <string>/Users/josecampos/Documents/wally-trader/adapters/hermes/hermes_daemon_wrapper.sh</string>
     </array>
 
     <key>WorkingDirectory</key>
@@ -46,13 +43,13 @@
     <key>ThrottleInterval</key>
     <integer>30</integer>
 
-    <!-- Logs inside the repo so "make hermes-status" can easily tail them -->
+    <!-- Logs inside the repo so make hermes-logs can easily tail them -->
     <key>StandardOutPath</key>
     <string>/Users/josecampos/Documents/wally-trader/logs/hermes-daemon.log</string>
     <key>StandardErrorPath</key>
     <string>/Users/josecampos/Documents/wally-trader/logs/hermes-daemon.log</string>
 
-    <!-- Forward PATH so hermes can find node/python and the MCP servers -->
+    <!-- Forward PATH so the wrapper can find hermes / node / python -->
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>

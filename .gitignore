@@ -104,3 +104,12 @@ logs/
 
 # Mobile auth token
 **/mobile_token*
+
+# Build artifacts
+shared/wally_core/build/
+.pytest_cache/
+**/.pytest_cache/
+
+# Typo worktree dirs from prior sessions
+.claire/
+.clone/

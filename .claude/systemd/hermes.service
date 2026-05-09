@@ -1,0 +1,60 @@
+; .claude/systemd/hermes.service
+; systemd-user unit for the Hermes daemon on Linux / WSL Ubuntu.
+;
+; Why systemd-user (not system): on WSL2 you usually don't have root for
+; system units, and we want this to live alongside the user's login session
+; (matches macOS launchd Aqua-session semantics). Requires:
+;   /etc/wsl.conf  →  [boot]\n systemd=true   (then `wsl --shutdown` once)
+;
+; Install (one-time):
+;   make hermes-systemd-install
+;
+; Manual install:
+;   mkdir -p ~/.config/systemd/user/
+;   cp .claude/systemd/hermes.service ~/.config/systemd/user/
+;   systemctl --user daemon-reload
+;   systemctl --user enable --now hermes.service
+;   loginctl enable-linger $USER         # survive logout / WSL shell exit
+;
+; Inspect:
+;   systemctl --user status hermes
+;   journalctl --user -u hermes -f       # live logs (also mirrored to logs/hermes-daemon.log)
+;
+; Restart after editing:
+;   make hermes-restart                   # uses systemctl --user restart hermes
+;
+; The wrapper script handles binary detection, subcommand detection, .env
+; sourcing, and log rotation. Don't replicate that logic here.
+
+[Unit]
+Description=Hermes daemon (wally-trader Telegram bot + MCP bridge)
+Documentation=file://%h/wally-trader/docs/hermes-setup.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+; %h is $HOME under systemd-user. Adjust if your repo lives elsewhere — or
+; pass via drop-in: systemctl --user edit hermes
+Environment=REPO=%h/wally-trader
+WorkingDirectory=%h/wally-trader
+ExecStart=/usr/bin/env bash %h/wally-trader/adapters/hermes/hermes_daemon_wrapper.sh
+
+; Mirror stdout to the same log file launchd uses on macOS so make hermes-logs
+; tails the same path on both OSes. journalctl --user -u hermes -f also works.
+StandardOutput=append:%h/wally-trader/logs/hermes-daemon.log
+StandardError=append:%h/wally-trader/logs/hermes-daemon.log
+
+Restart=on-failure
+RestartSec=30
+; Don't restart loop if the wrapper exits on a real config error (exit 2/3
+; means hermes binary missing or unsupported subcommand - needs human fix).
+RestartPreventExitStatus=2 3
+
+; Soft resource caps so a runaway log/leak doesn't tip the WSL VM.
+LimitNOFILE=4096
+MemoryMax=2G
+
+[Install]
+WantedBy=default.target

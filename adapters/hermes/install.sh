@@ -14,6 +14,11 @@ python3 -c "import yaml" 2>/dev/null || {
   pip3 install --user pyyaml
 }
 
+# Ensure runtime helpers are executable (idempotent — chmod is no-op if already set)
+chmod +x "$REPO/adapters/hermes/hermes_daemon_wrapper.sh" 2>/dev/null || true
+chmod +x "$REPO/adapters/hermes/wsl_tv_bridge.sh"        2>/dev/null || true
+chmod +x "$REPO/adapters/hermes/telegram_setup.sh"       2>/dev/null || true
+
 # First generation
 echo "🔄 Generating .hermes/skills/ from system/..."
 python3 "$REPO/adapters/hermes/transform.py"
