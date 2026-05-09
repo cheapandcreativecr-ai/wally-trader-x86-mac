@@ -51,3 +51,37 @@ def test_parity_mode_requires_assets_dict():
             capital_usd=10000, entry=1.10, sl=1.095, side="LONG",
             leverage=50, mode=RiskMode.PARITY, profile="ftmo",
         )
+
+
+def test_auto_levels_combines_leverage_cap_and_atr_sl():
+    from wally_core.risk import auto_levels
+    res = auto_levels(
+        entry=100.0, side="LONG", atr_pct=1.0,
+        regime="RANGE_CHOP", profile="bitunix", leverage=25,
+    )
+    assert res["leverage_used"] == 20  # capped from 25 → 20
+    assert len(res["warnings"]) > 0
+    assert "WARN" in res["warnings"][0]
+    assert res["sl"]["sl_price"] == pytest.approx(98.5, abs=0.01)
+    assert "tp1" in res["tps"]
+
+
+def test_auto_levels_no_cap_warning_when_under_cap():
+    from wally_core.risk import auto_levels
+    res = auto_levels(
+        entry=50000.0, side="SHORT", atr_pct=0.5,
+        regime="TREND_FUERTE", profile="retail", leverage=5,
+    )
+    assert res["leverage_used"] == 5
+    assert res["warnings"] == []
+    assert res["sl"]["multiplier_used"] == 2.0
+
+
+def test_auto_levels_unknown_profile_defaults_10x():
+    from wally_core.risk import auto_levels
+    res = auto_levels(
+        entry=100.0, side="LONG", atr_pct=1.0,
+        regime="RANGE_CHOP", profile="unknown_profile", leverage=15,
+    )
+    assert res["leverage_used"] == 10
+    assert "WARN" in res["warnings"][0]

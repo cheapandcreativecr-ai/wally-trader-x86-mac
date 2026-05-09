@@ -14,6 +14,8 @@ from .tools.journal_close import journal_close as _journal_close
 from .tools.hunt_signals import hunt_signals as _hunt_signals
 from .tools.levels_now import levels_now as _levels_now
 from .tools.macross_signal import macross_signal as _macross_signal
+from .tools.portfolio_heat import portfolio_heat as _portfolio_heat
+from .tools.auto_sl_tp import auto_sl_tp as _auto_sl_tp
 
 mcp = FastMCP("wally-trader")
 
@@ -155,6 +157,18 @@ def macross_signal(
 ) -> dict:
     """Detect EMA(fast)/EMA(slow) crossover signal for trending regime."""
     return _macross_signal(bars_path=bars_path, fast=fast, slow=slow)
+
+
+@mcp.tool()
+def portfolio_heat(positions_json: str, capital_usd: float, max_heat_pct: float = 15.0) -> dict:
+    """Portfolio heat (sum of position losses / capital). Breach if heat > max_heat_pct."""
+    return _portfolio_heat(positions_json, capital_usd, max_heat_pct)
+
+
+@mcp.tool()
+def auto_sl_tp(entry: float, side: str, atr_pct: float, regime: str = "RANGE_CHOP") -> dict:
+    """Compute volatility-adjusted SL + 4 staggered TPs (R:R 2.5/4/6/8)."""
+    return _auto_sl_tp(entry, side, atr_pct, regime)
 
 
 def main():

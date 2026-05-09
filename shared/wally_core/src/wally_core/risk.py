@@ -117,3 +117,42 @@ def calculate_position_size(
             raise ValueError("parity mode requires assets dict (multi-asset volatility)")
         raise NotImplementedError("parity mode arrives in Phase 4 (multi-asset)")
     raise ValueError(f"unknown mode {mode}")
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 addition: auto_levels — combines LEVERAGE_CAPS with ATR-SL
+# ---------------------------------------------------------------------------
+from .atr_sl import volatility_adjusted_sl, auto_tp_levels  # noqa: E402
+
+
+def auto_levels(
+    *,
+    entry: float,
+    side: str,
+    atr_pct: float,
+    regime: str,
+    profile: str,
+    leverage: int = 10,
+) -> dict:
+    """Compute SL + 4 TPs with leverage cap from profile.
+
+    Combines LEVERAGE_CAPS profile-aware capping with ATR-SL adjustment.
+    """
+    cap = LEVERAGE_CAPS.get(profile, 10)
+    leverage_used = min(leverage, cap)
+    warnings = []
+    if leverage > cap:
+        warnings.append(f"WARN: leverage {leverage}x capped to {cap}x for profile {profile}")
+
+    sl_data = volatility_adjusted_sl(entry, side, atr_pct, regime)
+    tps = auto_tp_levels(entry, sl_data["sl_price"], side)
+
+    return {
+        "entry": entry,
+        "side": side,
+        "leverage_used": leverage_used,
+        "profile": profile,
+        "sl": sl_data,
+        "tps": tps,
+        "warnings": warnings,
+    }
