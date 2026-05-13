@@ -59,8 +59,8 @@
 - **Símbolo**: BYBIT:BTCUSDT
 - **Timeframe**: 15m
 - **Entrada**: $79,692
-- **Salida**: $78,287
-- **Ganancia**: +$42.80 (25× apalancamiento)
+- **Salida**: $78,839
+- **Ganancia**: +$25.95 (25× apalancamiento)
 - **RR real**: 1 : 2.5
 - **Validación**: Order flow multi-exchange
 - **Estado**: ✅ CERRADA
