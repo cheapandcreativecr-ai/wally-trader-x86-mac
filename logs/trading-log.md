@@ -54,3 +54,13 @@
 - **RR real**: 1 : 2.5
 - **Validación**: Order flow multi-exchange + rechazo zona $81,200–81,300
 - **Estado**: ✅ CERRADA
+### 🔹 Operación #6 — Short
+- **Fecha**: 2026-05-12
+- **Símbolo**: BYBIT:BTCUSDT
+- **Timeframe**: 15m
+- **Entrada**: $79,692
+- **Salida**: $78,287
+- **Ganancia**: +$42.80 (25× apalancamiento)
+- **RR real**: 1 : 2.5
+- **Validación**: Order flow multi-exchange
+- **Estado**: ✅ CERRADA
