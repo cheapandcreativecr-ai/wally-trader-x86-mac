@@ -55,12 +55,14 @@
 - **Validación**: Order flow multi-exchange + rechazo zona $81,200–81,300
 - **Estado**: ✅ CERRADA
 ### 🔹 Operación #6 — Short
+
+### 🔹 Operación #7 — Long
 - **Fecha**: 2026-05-12
 - **Símbolo**: BYBIT:BTCUSDT
 - **Timeframe**: 15m
-- **Entrada**: $79,692
-- **Salida**: $78,839
-- **Ganancia**: +$25.95 (25× apalancamiento)
+- **Entrada**: $79,173
+- **Salida**: $79,388
+- **Ganancia**: +$8.36 (25× apalancamiento)
 - **RR real**: 1 : 2.5
-- **Validación**: Order flow multi-exchange
+- **Validación**: Order flow multi-exchange (long)
 - **Estado**: ✅ CERRADA
