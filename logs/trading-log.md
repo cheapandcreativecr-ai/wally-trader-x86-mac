@@ -1,5 +1,7 @@
 ## 📈 Historial de Operaciones — 2026-05-12
 
+**Resumen total**: Ganancia acumulada $81.58 (capital final $131.58)
+
 ### 🔹 Operación #1 — Short
 - **Fecha**: 2026-05-12
 - **Símbolo**: BYBIT:BTCUSDT
@@ -55,7 +57,15 @@
 - **Validación**: Order flow multi-exchange + rechazo zona $81,200–81,300
 - **Estado**: ✅ CERRADA
 ### 🔹 Operación #6 — Short
-
+- **Fecha**: 2026-05-12
+- **Símbolo**: BYBIT:BTCUSDT
+- **Timeframe**: 15m
+- **Entrada**: $79,692
+- **Salida**: $78,839
+- **Ganancia**: +$26.12 (25× apalancamiento)
+- **RR real**: 1 : 2.5
+- **Validación**: Order flow multi-exchange (short)
+- **Estado**: ✅ CERRADA
 ### 🔹 Operación #7 — Long
 - **Fecha**: 2026-05-12
 - **Símbolo**: BYBIT:BTCUSDT
