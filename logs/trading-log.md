@@ -1,6 +1,6 @@
 ## 📈 Historial de Operaciones — 2026-05-12
 
-**Resumen total**: Ganancia acumulada $90.61 (capital final $140.61)
+**Resumen total**: Ganancia acumulada $258.53 (capital final $308.53)
 
 ### 🔹 Operación #1 — Short
 - **Fecha**: 2026-05-12
@@ -56,6 +56,7 @@
 - **RR real**: 1 : 2.5
 - **Validación**: Order flow multi-exchange + rechazo zona $81,200–81,300
 - **Estado**: ✅ CERRADA
+
 ### 🔹 Operación #6 — Short
 - **Fecha**: 2026-05-12
 - **Símbolo**: BYBIT:BTCUSDT
@@ -66,6 +67,7 @@
 - **RR real**: 1 : 2.5
 - **Validación**: Order flow multi-exchange (short)
 - **Estado**: ✅ CERRADA
+
 ### 🔹 Operación #7 — Long
 - **Fecha**: 2026-05-12
 - **Símbolo**: BYBIT:BTCUSDT
@@ -86,4 +88,59 @@
 - **Ganancia**: +$9.03 (25× apalancamiento)
 - **RR real**: 1 : 2.5
 - **Validación**: Order flow multi-exchange (short)
+- **Estado**: ✅ CERRADA
+
+### 🔹 Operación #10 — Short
+- **Fecha**: 2026-05-13
+- **Símbolo**: BYBIT:BTCUSDT
+- **Timeframe**: 15m
+- **Entrada**: $79,646
+- **Salida**: $79,300
+- **Ganancia**: +$14.26 (25× apalancamiento)
+- **RR real**: 1 : 2.5
+- **Validación**: Order flow multi‑exchange (short)
+- **Estado**: ✅ CERRADA
+
+### 🔹 Operación #11 — Long
+- **Fecha**: 2026-05-13
+- **Símbolo**: BYBIT:BTCUSDT
+- **Timeframe**: 15m
+- **Entrada**: $79,414
+- **Salida**: $79,646
+- **Ganancia**: +$9.02 (25× apalancamiento)
+- **RR real**: 1 : 2.5
+- **Validación**: Order flow multi-exchange (long)
+- **Estado**: ✅ CERRADA
+
+### 🔹 Operación #13 — Long
+- **Fecha**: 2026-05-13
+- **Símbolo**: BYBIT:BTCUSDT
+- **Timeframe**: 15m
+- **Entrada**: $79,357
+- **Salida**: $79,640
+- **Ganancia**: +$20.38 (25× apalancamiento)
+- **RR real**: 1 : 2.5
+- **Validación**: Order flow multi‑exchange (long)
+- **Estado**: ✅ CERRADA
+
+### 🔹 Operación #14 — Short (Super Mega Short)
+- **Fecha**: 2026-05-13
+- **Símbolo**: BYBIT:BTCUSDT
+- **Timeframe**: 15m
+- **Entrada**: $79,762
+- **Salida**: $79,555
+- **Ganancia**: +$17.20 (25× apalancamiento)
+- **RR real**: 1 : 2.5
+- **Validación**: Order flow multi‑exchange (short)
+- **Estado**: ✅ CERRADA
+
+### 🔹 Operación #15 — Long (Super Mega Long)
+- **Fecha**: 2026-05-14
+- **Símbolo**: BYBIT:BTCUSDT
+- **Timeframe**: 15m
+- **Entrada**: $80,023
+- **Salida**: $80,321
+- **Ganancia**: +$26.28 (25× apalancamiento)
+- **RR real**: 1 : 2.5
+- **Validación**: Order flow multi‑exchange (long)
 - **Estado**: ✅ CERRADA
