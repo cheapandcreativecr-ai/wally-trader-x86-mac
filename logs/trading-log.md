@@ -1,6 +1,6 @@
 ## 📈 Historial de Operaciones — 2026-05-12
 
-**Resumen total**: Ganancia acumulada $459.10 (capital final $509.10)
+**Resumen total**: Ganancia acumulada $357.61 (capital final $407.61)
 
 ### 🔹 Operación #1 — Short
 - **Fecha**: 2026-05-12
